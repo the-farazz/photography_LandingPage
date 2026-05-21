@@ -23,13 +23,13 @@ export const metadata = {
   openGraph: {
     title: "FS Visuals | Cinematic Wedding Photography & Videography Karachi",
     description: "Aap ki yaadon ka cinematic safar. High-end wedding films and photography in Karachi.",
-    url: "https://fsvisuals.com",
+    url: "https://thefsvisuals.com",
     siteName: "FS Visuals",
     locale: "en_PK",
     type: "website",
   },
   verification: {
-    google: "DdSrKhHONmCz_OYa6_vdHjHgqGuZNQD_ad-8gdd7Uv4",
+    google: "alQ_LMMUJk1gBSRF8AUrngtvoCuUS4yH5FDmbn-GwQ0",
   },
 };
 

@@ -1,7 +1,7 @@
 export default function sitemap() {
   return [
     {
-      url: 'https://fsvisuals.com',
+      url: 'https://thefsvisuals.com',
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 1,
