@@ -37,6 +37,47 @@ const teamMembers = [
     email: "mailto:faraz@fsvisual.com"
   },
   {
+    name: "Shariq Shahzad",
+    role: "Photographer & Editor",
+    specialty: "High-End Event Capture",
+    bio: "Ensures visual composition is flawless from shooting on-site to post-processing for a stunning luxury final gallery.",
+    image: shariqImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:shariq@fsvisual.com"
+  },
+  {
+    name: "Usman Mushtaq",
+    role: "Video Editor",
+    specialty: "Cinematic Editing & Pacing",
+    bio: "Transforms hours of raw footage into elegant highlight reels and emotional wedding films with matching sound design.",
+    image: usmanImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:usman@fsvisual.com"
+  },
+  {
+    name: "Raees Sheikh",
+    role: "Photo Editor",
+    specialty: "Color Correction & Retouching",
+    bio: "Meticulous retoucher who handles detailed color correction and styling, giving every photo its final luxury grade.",
+    image: raeesImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:raees@fsvisual.com"
+  },
+  {
+    name: "Ibrahim",
+    role: "Cinematographer",
+    specialty: "Cinematic Movement & Drone",
+    bio: "Specializes in dynamic cinematic camera movement, gimbal techniques, and dramatic drone perspectives of grand events.",
+    image: ibrahimImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:ibrahim@fsvisual.com",
+    imageClass: "object-top scale-[1.75] origin-top group-hover:scale-[1.82]"
+  },
+  {
     name: "Waqar",
     role: "Photographer & Cinematographer",
     specialty: "Cinematography & Portraits",
@@ -55,46 +96,6 @@ const teamMembers = [
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
     email: "mailto:moiz@fsvisual.com"
-  },
-  {
-    name: "Ibrahim",
-    role: "Cinematographer",
-    specialty: "Cinematic Movement & Drone",
-    bio: "Specializes in dynamic cinematic camera movement, gimbal techniques, and dramatic drone perspectives of grand events.",
-    image: ibrahimImg,
-    instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:ibrahim@fsvisual.com"
-  },
-  {
-    name: "Shariq Shahzad",
-    role: "Photographer & Editor",
-    specialty: "High-End Event Capture",
-    bio: "Ensures visual composition is flawless from shooting on-site to post-processing for a stunning luxury final gallery.",
-    image: shariqImg,
-    instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:shariq@fsvisual.com"
-  },
-  {
-    name: "Usman",
-    role: "Video Editor",
-    specialty: "Cinematic Editing & Pacing",
-    bio: "Transforms hours of raw footage into elegant highlight reels and emotional wedding films with matching sound design.",
-    image: usmanImg,
-    instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:usman@fsvisual.com"
-  },
-  {
-    name: "Raees",
-    role: "Photo Editor",
-    specialty: "Color Correction & Retouching",
-    bio: "Meticulous retoucher who handles detailed color correction and styling, giving every photo its final luxury grade.",
-    image: raeesImg,
-    instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:raees@fsvisual.com"
   }
 ];
 
@@ -161,7 +162,7 @@ export default function Team() {
                   fill
                   placeholder="blur"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter grayscale group-hover:grayscale-0"
+                  className={`object-cover transition-transform duration-700 ease-out filter grayscale group-hover:grayscale-0 ${member.imageClass || "object-center group-hover:scale-105"}`}
                 />
                 
                 {/* Dark Vignette Overlay */}
