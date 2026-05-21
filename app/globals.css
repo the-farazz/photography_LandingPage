@@ -114,3 +114,31 @@ body {
   background: var(--accent-gold);
   color: var(--bg-primary);
 }
+
+/* Chrome/Safari Browser Autofill Override for Dark Mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-secondary) inset !important;
+  box-shadow: 0 0 0px 1000px var(--bg-secondary) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Chrome/Safari Calendar Icon Override for Dark Mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(1) saturate(5) hue-rotate(15deg); /* Turns the black indicator gold-ish/white */
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

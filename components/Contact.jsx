@@ -165,8 +165,8 @@ export default function Contact() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
-                        placeholder="e.g. Faraz Alam"
+                        className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
+                        placeholder="e.g. FS Visuals"
                       />
                     </div>
 
@@ -182,7 +182,7 @@ export default function Contact() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
+                        className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
                         placeholder="e.g. the.fs.visualss@gmail.com"
                       />
                     </div>
@@ -201,7 +201,7 @@ export default function Contact() {
                         required
                         value={formData.phone}
                         onChange={handleChange}
-                        className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
+                        className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
                         placeholder="e.g. +92 327 3129464"
                       />
                     </div>
@@ -218,7 +218,7 @@ export default function Contact() {
                         required
                         value={formData.date}
                         onChange={handleChange}
-                        className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
+                        className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
                       />
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export default function Contact() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none resize-none"
+                      className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none resize-none"
                       placeholder="Share details about the venue, gathering size, custom requirements, and your vision..."
                     />
                   </div>
