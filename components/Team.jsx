@@ -12,6 +12,7 @@ import ibrahimImg from "@/images/ibrahimCinematographer.jpg";
 import shariqImg from "@/images/shariqShahzadPhotographerEditor.jpg";
 import usmanImg from "@/images/usmanVideoEditor.jpg";
 import raeesImg from "@/images/RaeesPhotoEdiror.jpg";
+import hassanImg from "@/images/hassanPhotoGrapherCinematographer.jpg";
 
 
 
@@ -55,6 +56,16 @@ const teamMembers = [
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
     email: "mailto:raees@fsvisual.com"
+  },
+  {
+    name: "Hassan",
+    role: "Photographer & Cinematographer",
+    specialty: "Cinematography & Portraits",
+    bio: "Captures beautiful candid frames and cinematic sequences, preserving raw emotions with high-end framing.",
+    image: hassanImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:hassan@fsvisual.com"
   },
   {
     name: "Ibrahim",
