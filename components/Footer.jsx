@@ -146,7 +146,7 @@ export default function Footer() {
 
           {/* Copyright notice */}
           <p className="text-[10px] text-text-muted font-light tracking-widest text-center sm:text-left">
-            © 2025 FS Visual. All rights reserved.
+            © 2026 FS Visual. All rights reserved.
           </p>
 
           {/* Scroll back to top button */}
