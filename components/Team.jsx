@@ -6,11 +6,11 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 // Import local team images
-import farazImg from "@/images/farazPhotographerEditor.jpg";
+import farazImg from "@/images/farazAlam_PhotographerEditor.jpg";
 import waqarImg from "@/images/waqarPhotoGrapherCinematographer.jpg";
 import moizImg from "@/images/moizAlamSeniorPhotographerVideographer.jpg";
 import ibrahimImg from "@/images/ibrahimCinematographer.jpg";
-import shariqImg from "@/images/shariqPhotographerEditor.jpg";
+import shariqImg from "@/images/shariqShahzadPhotographerEditor.jpg";
 import usmanImg from "@/images/usmanVideoEditor.jpg";
 import raeesImg from "@/images/RaeesPhotoEdiror.jpg";
 
@@ -27,7 +27,7 @@ const WhatsappIcon = (props) => (
 
 const teamMembers = [
   {
-    name: "Faraz Siddiqui",
+    name: "Faraz Alam",
     role: "Photographer & Editor",
     specialty: "Creative Direction & Fine Art",
     bio: "Founding visionary of FS Visuals. Dedicated to sculpting with light and freezing emotional moments in timeless frames.",
@@ -67,7 +67,7 @@ const teamMembers = [
     email: "mailto:ibrahim@fsvisual.com"
   },
   {
-    name: "Shariq",
+    name: "Shariq Shahzad",
     role: "Photographer & Editor",
     specialty: "High-End Event Capture",
     bio: "Ensures visual composition is flawless from shooting on-site to post-processing for a stunning luxury final gallery.",
