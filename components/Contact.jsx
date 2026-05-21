@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Mail, MapPin, Instagram, Facebook, MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import emailjs from "@emailjs/browser";
 
 const TiktokIcon = (props) => (
   <svg
@@ -37,7 +38,9 @@ export default function Contact() {
     date: "",
     message: "",
   });
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -62,12 +65,43 @@ export default function Contact() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate submission
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
+    setSubmitting(true);
+    setError(null);
+
+    const templateParams = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      date: formData.date,
+      message: formData.message,
+    };
+
+    Promise.all([
+      // 1. Send inquiry email to FS Visuals
+      emailjs.send(
+        "service_xb8umvo",
+        "template_ea7olvg",
+        templateParams,
+        "_iB-PeMQ35Yb5DPCX"
+      ),
+      // 2. Send auto-reply thank-you email to the customer
+      emailjs.send(
+        "service_xb8umvo",
+        "template_50n78ud",
+        templateParams,
+        "_iB-PeMQ35Yb5DPCX"
+      )
+    ])
+    .then(() => {
+      setSubmitted(true);
       setFormData({ name: "", email: "", phone: "", date: "", message: "" });
-    }, 5000);
+      setSubmitting(false);
+    })
+    .catch((err) => {
+      console.error("EmailJS Error:", err);
+      setError("Failed to send message. Please try again or contact us directly via WhatsApp.");
+      setSubmitting(false);
+    });
   };
 
   const handleChange = (e) => {
@@ -132,7 +166,7 @@ export default function Contact() {
                         value={formData.name}
                         onChange={handleChange}
                         className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
-                        placeholder="e.g. Bilal Ahmed"
+                        placeholder="e.g. Faraz Alam"
                       />
                     </div>
 
@@ -149,7 +183,7 @@ export default function Contact() {
                         value={formData.email}
                         onChange={handleChange}
                         className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
-                        placeholder="e.g. bilal@example.com"
+                        placeholder="e.g. the.fs.visualss@gmail.com"
                       />
                     </div>
                   </div>
@@ -168,7 +202,7 @@ export default function Contact() {
                         value={formData.phone}
                         onChange={handleChange}
                         className="bg-bg-secondary/80 border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none"
-                        placeholder="e.g. +92 300 1234567"
+                        placeholder="e.g. +92 327 3129464"
                       />
                     </div>
 
@@ -206,13 +240,21 @@ export default function Contact() {
                     />
                   </div>
 
+                  {/* Error Message */}
+                  {error && (
+                    <div className="p-4 bg-red-950/20 border border-red-500/20 text-red-400 text-xs font-light text-center">
+                      {error}
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all duration-300 rounded-none flex items-center justify-center gap-2 border border-accent-gold relative overflow-hidden group shadow-lg shadow-accent-gold/10"
+                    disabled={submitting}
+                    className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all duration-300 rounded-none flex items-center justify-center gap-2 border border-accent-gold relative overflow-hidden group shadow-lg shadow-accent-gold/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="relative z-10 flex items-center gap-2">
-                      Send Message <Send className="w-3.5 h-3.5" />
+                      {submitting ? "Sending..." : "Send Message"} <Send className="w-3.5 h-3.5" />
                     </span>
                     <span className="absolute inset-0 bg-accent-gold transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
                   </button>
