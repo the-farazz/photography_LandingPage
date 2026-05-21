@@ -240,7 +240,7 @@ export default function Contact() {
                     Location
                   </h4>
                   <p className="text-sm font-light text-text-primary">
-                    DHA Phase 6, Karachi, Pakistan
+                    Orangi Town, Karachi, Pakistan.
                   </p>
                 </div>
               </div>
@@ -255,10 +255,10 @@ export default function Contact() {
                     Email
                   </h4>
                   <a
-                    href="mailto:hello@fsvisual.com"
+                    href="mailto:the.fs.visualss@gmail.com"
                     className="text-sm font-light text-text-primary hover:text-accent-gold transition-colors"
                   >
-                    hello@fsvisual.com
+                    the.fs.visualss@gmail.com
                   </a>
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function Contact() {
               </div>
 
               <a
-                href="https://wa.me/923001234567"
+                href="https://wa.me/923273129464"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-4 bg-emerald-600 text-text-primary text-xs font-bold tracking-widest uppercase hover:bg-emerald-700 transition-all duration-300 rounded-none flex items-center justify-center gap-2 border border-emerald-600 relative overflow-hidden group shadow-lg shadow-emerald-600/10"

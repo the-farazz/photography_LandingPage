@@ -24,8 +24,8 @@ const teamMembers = [
     bio: "Founding visionary of FS Visuals. Dedicated to sculpting with light and freezing emotional moments in timeless frames.",
     image: farazImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:faraz@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Shariq Shahzad",
@@ -34,8 +34,8 @@ const teamMembers = [
     bio: "Ensures visual composition is flawless from shooting on-site to post-processing for a stunning luxury final gallery.",
     image: shariqImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:shariq@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Usman Mushtaq",
@@ -44,8 +44,8 @@ const teamMembers = [
     bio: "Transforms hours of raw footage into elegant highlight reels and emotional wedding films with matching sound design.",
     image: usmanImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:usman@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Raees Sheikh",
@@ -54,8 +54,8 @@ const teamMembers = [
     bio: "Meticulous retoucher who handles detailed color correction and styling, giving every photo its final luxury grade.",
     image: raeesImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:raees@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Hassan",
@@ -64,8 +64,8 @@ const teamMembers = [
     bio: "Captures beautiful candid frames and cinematic sequences, preserving raw emotions with high-end framing.",
     image: hassanImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:hassan@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Ibrahim",
@@ -74,8 +74,8 @@ const teamMembers = [
     bio: "Specializes in dynamic cinematic camera movement, gimbal techniques, and capturing grand events.",
     image: ibrahimImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:ibrahim@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Waqar",
@@ -84,8 +84,8 @@ const teamMembers = [
     bio: "Master of visual framing. Seamlessly blends traditional portrait photography with modern cinematic videography techniques.",
     image: waqarImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:waqar@fsvisual.com"
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Moiz Alam",
@@ -94,8 +94,8 @@ const teamMembers = [
     bio: "Captures natural raw expressions, laughter, and behind-the-scenes moments that often go unnoticed but tell the true story.",
     image: moizImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923001234567",
-    email: "mailto:moiz@fsvisual.com",
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com",
     imageClass: "object-[35%_top] scale-[1.75] origin-[35%_top] group-hover:scale-[1.82]"
   }
 ];

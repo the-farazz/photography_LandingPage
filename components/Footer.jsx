@@ -134,7 +134,7 @@ export default function Footer() {
               <TiktokIcon className="w-4 h-4" />
             </a>
             <a
-              href="https://wa.me/923001234567"
+              href="https://wa.me/923273129464"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 bg-bg-primary hover:bg-accent-gold hover:text-bg-primary text-text-muted transition-all duration-300 border border-white/5 hover:border-accent-gold"
