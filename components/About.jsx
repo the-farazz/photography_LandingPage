@@ -69,7 +69,7 @@ export default function About() {
     <section
       id="about"
       ref={sectionRef}
-      className="relative py-24 md:py-32 bg-bg-secondary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-secondary overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
@@ -105,7 +105,7 @@ export default function About() {
             <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
               Our Journey
             </span>
-            <h2 className="serif-heading text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-8">
+            <h2 className="serif-heading text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-4">
               Preserving Your Heritage, One Frame at a Time.
             </h2>
             

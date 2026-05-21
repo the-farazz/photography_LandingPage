@@ -65,7 +65,7 @@ export default function Testimonials() {
     <section
       id="testimonials"
       ref={containerRef}
-      className="relative py-24 md:py-32 bg-bg-primary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-primary overflow-hidden"
     >
       {/* Styles for horizontal auto scroll */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -81,7 +81,7 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
         {/* Section Header */}
-        <div className="testimonials-header text-center max-w-3xl mx-auto mb-16 md:mb-24">
+        <div className="testimonials-header text-center max-w-3xl mx-auto mb-10 md:mb-12">
           <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
             Love Letters
           </span>

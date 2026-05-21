@@ -74,7 +74,7 @@ export default function Services() {
     <section
       id="services"
       ref={containerRef}
-      className="relative py-24 md:py-32 bg-bg-secondary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-secondary overflow-hidden"
     >
       {/* Background design elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.03)_0%,transparent_70%)] pointer-events-none" />
@@ -83,7 +83,7 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
         {/* Section Heading */}
-        <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24 services-title-anim">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-12 services-title-anim">
           <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
             Crafting Legends
           </span>

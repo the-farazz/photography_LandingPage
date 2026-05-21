@@ -100,12 +100,12 @@ export default function Portfolio() {
     <section
       id="portfolio"
       ref={containerRef}
-      className="relative py-24 md:py-32 bg-bg-primary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-primary overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
         {/* Header and Filter Tabs */}
-        <div className="portfolio-header flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-8">
+        <div className="portfolio-header flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12 gap-8">
           <div>
             <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
               Our Legacy

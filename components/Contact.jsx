@@ -136,7 +136,7 @@ export default function Contact() {
     <section
       id="contact"
       ref={containerRef}
-      className="relative py-24 md:py-32 bg-bg-primary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-primary overflow-hidden"
     >
       {/* Background gradients */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.03)_0%,transparent_70%)] pointer-events-none" />
@@ -144,7 +144,7 @@ export default function Contact() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
         {/* Section Header */}
-        <div className="contact-anim text-center max-w-3xl mx-auto mb-16 md:mb-24">
+        <div className="contact-anim text-center max-w-3xl mx-auto mb-10 md:mb-12">
           <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
             Get In Touch
           </span>

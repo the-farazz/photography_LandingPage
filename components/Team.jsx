@@ -127,7 +127,7 @@ export default function Team() {
     <section
       id="team"
       ref={containerRef}
-      className="relative py-24 md:py-32 bg-bg-primary overflow-hidden"
+      className="relative py-16 md:py-20 bg-bg-primary overflow-hidden"
     >
       {/* Subtle Background Radial Gradient */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.02)_0%,transparent_70%)] pointer-events-none" />
@@ -135,7 +135,7 @@ export default function Team() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         
         {/* Section Header */}
-        <div className="team-anim text-center max-w-3xl mx-auto mb-16 md:mb-24">
+        <div className="team-anim text-center max-w-3xl mx-auto mb-10 md:mb-12">
           <span className="text-xs font-semibold tracking-[0.3em] text-accent-gold uppercase mb-3 block">
             Creative Minds
           </span>
