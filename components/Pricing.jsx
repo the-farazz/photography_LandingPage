@@ -45,15 +45,14 @@ export default function Pricing() {
     {
       name: "Silver",
       type: "Photography Only",
-      price: "Rs. 150,000",
+      price: "Rs. 30,000",
       period: "per event",
       desc: "Perfect for intimate events, pre-wedding shoots, or standalone photography coverage.",
       features: [
         "1 Senior Fine-Art Photographer",
+        "3 Days Photography Coverage",
         "Unlimited high-resolution digital edits",
-        "Online gallery delivery within 4 weeks",
-        "4 Hours of event coverage",
-        "1 Standard physical photo book",
+        "1 Standard Album (10 Sheets)",
       ],
       popular: false,
       cta: "Select Silver",
@@ -61,17 +60,18 @@ export default function Pricing() {
     {
       name: "Gold",
       type: "Photography & Videography",
-      price: "Rs. 295,000",
+      price: "Rs. 70,000",
       period: "per event",
       desc: "Our signature package capturing your wedding in complete cinematic harmony.",
       features: [
-        "2 Senior Photographers & 2 Cinematographers",
+        "1 Senior Photographer",
+        "1 Cinematographer",
+        "Full day event coverage (4 Hours)",
+        "3 Days Photography",
+        "3 Days Cinematography",
         "1 Cinematic highlight film (3-5 mins)",
-        "Full documentary edit of ceremony & dances",
-        "1 Premium digital photo archive",
         "1 Large signature wedding album",
-        "Full day event coverage (8 Hours)",
-        "Subtle aerial drone coverage",
+        "Full documentary edit of ceremony & dances",
       ],
       popular: true,
       cta: "Select Gold",
@@ -79,17 +79,19 @@ export default function Pricing() {
     {
       name: "Platinum",
       type: "Complete Visual Production",
-      price: "Rs. 450,000",
+      price: "Rs. 99,999",
       period: "per event",
       desc: "An ultimate visual production with maximum coverage, drone film, and luxury products.",
       features: [
-        "3 Photographers & 3 Cinematographers",
+        "1 Photographer",
+        "1 Drone Operator",
+        "2 Cinematographers (Main event)",
+        "3 Days Photography",
+        "3 Days Cinematography",
+        "1 day drone (Main event)",
         "1 Cinematic teaser + 1 Premium highlight film",
-        "Full documentary wedding movie (4K)",
-        "2 Premium duplicate family albums",
         "1 Luxury leather master album",
-        "Complimentary pre-wedding or couple shoot",
-        "Exclusive senior editing priority",
+        "Full documentary wedding movie (4K)",
       ],
       popular: false,
       cta: "Select Platinum",
@@ -126,10 +128,10 @@ export default function Pricing() {
           {tiers.map((tier) => (
             <div
               key={tier.name}
-              className={`pricing-card-anim flex flex-col justify-between p-8 md:p-10 relative transition-all duration-500 border ${
+              className={`pricing-card-anim flex flex-col justify-between p-6 md:p-8 relative transition-all duration-500 border ${
                 tier.popular
                   ? "bg-bg-primary border-accent-gold shadow-[0_20px_50px_rgba(201,168,76,0.15)] lg:scale-105 z-10"
-                  : "glass-card border-white/5 hover:border-accent-gold/20"
+                  : "glass-card border-white/20 hover:border-accent-gold/40"
               }`}
             >
               {/* Popularity Badge */}
@@ -141,7 +143,7 @@ export default function Pricing() {
 
               <div>
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-6">
                   <span className="text-xs font-semibold tracking-[0.2em] text-accent-gold uppercase block mb-2">
                     {tier.type}
                   </span>
@@ -154,17 +156,14 @@ export default function Pricing() {
                 </div>
 
                 {/* Price Display */}
-                <div className="flex items-baseline mb-8 border-b border-white/5 pb-8">
+                <div className="flex items-baseline mb-6 border-b border-white/5 pb-6">
                   <span className="serif-heading text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
                     {tier.price}
-                  </span>
-                  <span className="text-xs text-text-muted ml-2 tracking-wider">
-                    / {tier.period}
                   </span>
                 </div>
 
                 {/* Features List */}
-                <ul className="space-y-4 mb-10">
+                <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start text-sm text-text-primary/80">
                       <Check className="w-4 h-4 text-accent-gold mr-3 mt-0.5 shrink-0" />
@@ -178,7 +177,10 @@ export default function Pricing() {
               <div>
                 <a
                   href="#contact"
-                  className={`w-full text-center block py-4 text-xs font-bold tracking-widest uppercase transition-all duration-300 rounded-none border ${
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('packageSelected', { detail: tier.name }));
+                  }}
+                  className={`w-full text-center block py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 rounded-none border ${
                     tier.popular
                       ? "bg-accent-gold border-accent-gold text-bg-primary hover:bg-accent-warm hover:border-accent-warm shadow-md"
                       : "bg-transparent border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold"

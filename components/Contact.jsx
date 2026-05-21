@@ -63,6 +63,30 @@ export default function Contact() {
     );
   }, []);
 
+  useEffect(() => {
+    const handlePackageSelect = (e) => {
+      const packageName = e.detail;
+      setFormData(prev => ({
+        ...prev,
+        message: `Hi, I am interested in booking the ${packageName} package. `
+      }));
+      
+      // Give time for scroll animation to reach the form, then focus
+      setTimeout(() => {
+        const messageEl = document.getElementById("message");
+        if (messageEl) {
+          messageEl.focus();
+          // Put cursor at the end of the text
+          const len = messageEl.value.length;
+          messageEl.setSelectionRange(len, len);
+        }
+      }, 800);
+    };
+
+    window.addEventListener('packageSelected', handlePackageSelect);
+    return () => window.removeEventListener('packageSelected', handlePackageSelect);
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
