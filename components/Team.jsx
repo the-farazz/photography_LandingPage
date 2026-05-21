@@ -5,6 +5,15 @@ import { Instagram, Mail } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+// Import local team images
+import farazImg from "@/images/farazPhotographerEditor.jpg";
+import waqarImg from "@/images/waqarPhotoGrapherCinematographer.jpg";
+import moizImg from "@/images/moizAlamSeniorPhotographerVideographer.jpg";
+import ibrahimImg from "@/images/ibrahimCinematographer.jpg";
+import shariqImg from "@/images/shariqPhotographerEditor.jpg";
+import usmanImg from "@/images/usmanVideoEditor.jpg";
+import raeesImg from "@/images/RaeesPhotoEdiror.jpg";
+
 const WhatsappIcon = (props) => (
   <svg
     viewBox="0 0 24 24"
@@ -19,43 +28,73 @@ const WhatsappIcon = (props) => (
 const teamMembers = [
   {
     name: "Faraz Siddiqui",
-    role: "Lead Photographer & Director",
-    specialty: "Fine Art Portraiture",
-    bio: "Founding visionary of FS Visual. Dedicated to sculpting with light and capturing heritage storytelling.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600",
+    role: "Photographer & Editor",
+    specialty: "Creative Direction & Fine Art",
+    bio: "Founding visionary of FS Visuals. Dedicated to sculpting with light and freezing emotional moments in timeless frames.",
+    image: farazImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
     email: "mailto:faraz@fsvisual.com"
   },
   {
-    name: "Ali Raza",
-    role: "Chief Cinematographer",
-    specialty: "Cinematic Movement",
-    bio: "Expert gimbal operator and drone pilot. Specializes in cinematic event pacing and lighting dynamics.",
-    image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=600",
+    name: "Waqar",
+    role: "Photographer & Cinematographer",
+    specialty: "Cinematography & Portraits",
+    bio: "Master of visual framing. Seamlessly blends traditional portrait photography with modern cinematic videography techniques.",
+    image: waqarImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
-    email: "mailto:ali@fsvisual.com"
+    email: "mailto:waqar@fsvisual.com"
   },
   {
-    name: "Zain Khan",
-    role: "Senior Video Editor",
-    specialty: "DaVinci Resolve Colorist",
-    bio: "Color grading specialist who structures raw event footage into rich, emotional cinematic stories.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600",
+    name: "Moiz Alam",
+    role: "Senior Photographer & Videographer",
+    specialty: "Candid & Documentary Capture",
+    bio: "Captures natural raw expressions, laughter, and behind-the-scenes moments that often go unnoticed but tell the true story.",
+    image: moizImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
-    email: "mailto:zain@fsvisual.com"
+    email: "mailto:moiz@fsvisual.com"
   },
   {
-    name: "Ayesha Sheikh",
-    role: "Lead Candid Photographer",
-    specialty: "Documentary Capture",
-    bio: "Specializes in capturing fast-paced, emotional raw expressions and behind-the-scenes moments.",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600",
+    name: "Ibrahim",
+    role: "Cinematographer",
+    specialty: "Cinematic Movement & Drone",
+    bio: "Specializes in dynamic cinematic camera movement, gimbal techniques, and dramatic drone perspectives of grand events.",
+    image: ibrahimImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923001234567",
-    email: "mailto:ayesha@fsvisual.com"
+    email: "mailto:ibrahim@fsvisual.com"
+  },
+  {
+    name: "Shariq",
+    role: "Photographer & Editor",
+    specialty: "High-End Event Capture",
+    bio: "Ensures visual composition is flawless from shooting on-site to post-processing for a stunning luxury final gallery.",
+    image: shariqImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:shariq@fsvisual.com"
+  },
+  {
+    name: "Usman",
+    role: "Video Editor",
+    specialty: "Cinematic Editing & Pacing",
+    bio: "Transforms hours of raw footage into elegant highlight reels and emotional wedding films with matching sound design.",
+    image: usmanImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:usman@fsvisual.com"
+  },
+  {
+    name: "Raees",
+    role: "Photo Editor",
+    specialty: "Color Correction & Retouching",
+    bio: "Meticulous retoucher who handles detailed color correction and styling, giving every photo its final luxury grade.",
+    image: raeesImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923001234567",
+    email: "mailto:raees@fsvisual.com"
   }
 ];
 
@@ -72,7 +111,7 @@ export default function Team() {
         opacity: 1,
         y: 0,
         duration: 1.2,
-        stagger: 0.15,
+        stagger: 0.1,
         ease: "power3.out",
         scrollTrigger: {
           trigger: containerRef.current,
@@ -108,7 +147,7 @@ export default function Team() {
         </div>
 
         {/* Team Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-center">
           {teamMembers.map((member) => (
             <div
               key={member.name}
@@ -120,6 +159,7 @@ export default function Team() {
                   src={member.image}
                   alt={member.name}
                   fill
+                  placeholder="blur"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter grayscale group-hover:grayscale-0"
                 />
