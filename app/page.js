@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import Services from "@/components/Services";
 import Portfolio from "@/components/Portfolio";
 import About from "@/components/About";
+import Team from "@/components/Team";
 import Testimonials from "@/components/Testimonials";
 import Pricing from "@/components/Pricing";
 import Contact from "@/components/Contact";
@@ -28,13 +29,16 @@ export default function Home() {
         {/* 4. About Section */}
         <About />
 
-        {/* 5. Testimonials Section */}
+        {/* 5. Team Section */}
+        <Team />
+
+        {/* 6. Testimonials Section */}
         <Testimonials />
 
-        {/* 6. Pricing Section */}
+        {/* 7. Pricing Section */}
         <Pricing />
 
-        {/* 7. Contact Section */}
+        {/* 8. Contact Section */}
         <Contact />
       </main>
 
