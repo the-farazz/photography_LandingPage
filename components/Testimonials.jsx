@@ -27,7 +27,7 @@ export default function Testimonials() {
 
   const testimonials = [
     {
-      quote: "FS Visual captured our Baraat so beautifully. The cinematic wedding film felt like a Bollywood dream. When we watched the highlight reel with our families, everyone had tears in their eyes. Truly a cinematic safar!",
+      quote: "FS Visuals captured our Baraat so beautifully. The cinematic wedding film felt like a Bollywood dream. When we watched the highlight reel with our families, everyone had tears in their eyes. Truly a cinematic safar!",
       name: "Zainab & Bilal",
       event: "Baraat Ceremony, Karachi",
       rating: 5,
@@ -39,7 +39,7 @@ export default function Testimonials() {
       rating: 5,
     },
     {
-      quote: "The energy of our Shendi was unmatched, and the team captured every dance move and laughter. The drone shots of our outdoor reception were breathtaking. FS Visual has an outstanding creative vision.",
+      quote: "The energy of our Shendi was unmatched, and the team captured every dance move and laughter. The drone shots of our outdoor reception were breathtaking. FS Visuals has an outstanding creative vision.",
       name: "Ayesha & Hamza",
       event: "Shendi Celebration, Karachi",
       rating: 5,

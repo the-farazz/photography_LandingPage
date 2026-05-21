@@ -18,13 +18,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "FS Visual | Cinematic Wedding Photography & Videography Karachi",
-  description: "FS Visual captures your wedding, birthday, engagement, and Nikkah moments with a luxury, cinematic touch in Karachi, Pakistan. Aap ki yaadon ka cinematic safar.",
+  title: "FS Visuals | Cinematic Wedding Photography & Videography Karachi",
+  description: "FS Visuals captures your wedding, birthday, engagement, and Nikkah moments with a luxury, cinematic touch in Karachi, Pakistan. Aap ki yaadon ka cinematic safar.",
   openGraph: {
-    title: "FS Visual | Cinematic Wedding Photography & Videography Karachi",
+    title: "FS Visuals | Cinematic Wedding Photography & Videography Karachi",
     description: "Aap ki yaadon ka cinematic safar. High-end wedding films and photography in Karachi.",
-    url: "https://fsvisual.com",
-    siteName: "FS Visual",
+    url: "https://fsvisuals.com",
+    siteName: "FS Visuals",
     locale: "en_PK",
     type: "website",
   },

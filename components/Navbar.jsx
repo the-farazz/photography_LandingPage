@@ -58,7 +58,7 @@ export default function Navbar() {
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-none outline-none ${
           scrolled
             ? "glass-navbar-custom py-4 shadow-2xl shadow-black/50"
-            : "bg-transparent py-6"
+            : "bg-transparent py-4"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
@@ -67,7 +67,7 @@ export default function Navbar() {
             href="#home"
             className="serif-heading text-2xl md:text-3xl font-bold tracking-widest text-text-primary group"
           >
-            FS <span className="text-accent-gold transition-colors duration-300 group-hover:text-accent-warm">VISUAL</span>
+            FS <span className="text-accent-gold transition-colors duration-300 group-hover:text-accent-warm">VISUALS</span>
           </a>
 
           {/* Desktop Navigation Links */}

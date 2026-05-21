@@ -7,6 +7,7 @@ import { ArrowDown } from "lucide-react";
 export default function Hero() {
   const heroRef = useRef(null);
   const bgRef = useRef(null);
+  const parallaxRef = useRef(null);
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const descRef = useRef(null);
@@ -64,45 +65,33 @@ export default function Hero() {
       yoyo: true,
       ease: "power1.inOut",
     });
-
-    // Parallax scrolling effect on background image
-    gsap.to(bgRef.current, {
-      yPercent: 20,
-      ease: "none",
-      scrollTrigger: {
-        trigger: heroRef.current,
-        start: "top top",
-        end: "bottom top",
-        scrub: true,
-      },
-    });
   }, []);
 
   return (
     <section
       id="home"
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-bg-primary pt-20"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-bg-primary"
     >
       {/* Background Cinematic Image with Overlays */}
-      <div className="absolute inset-0 z-0">
+      <div ref={parallaxRef} className="absolute inset-0 z-0 overflow-hidden">
         <Image
           ref={bgRef}
           src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1920"
           alt="Cinematic Wedding Vow Backdrop"
           fill
           priority
-          className="object-cover object-center opacity-60"
+          className="object-cover object-bottom opacity-60 transform-gpu"
         />
         {/* Deep moody black gradients to blend with background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary via-transparent to-bg-primary/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary via-transparent to-bg-primary/30 pointer-events-none" />
         {/* Subtle warm ambient radial highlight */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.06)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.06)_0%,transparent_70%)] pointer-events-none" />
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center mt-8">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center mt-8 pt-20">
         {/* Slogan pill */}
         <div className="inline-flex items-center space-x-2 px-4 py-1.5 border border-accent-gold/20 bg-bg-secondary/40 backdrop-blur-md rounded-full mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-accent-gold animate-ping" />
@@ -116,7 +105,7 @@ export default function Hero() {
           ref={titleRef}
           className="serif-heading text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight text-text-primary mb-4"
         >
-          FS <span className="text-accent-gold font-normal italic">Visual</span>
+          FS <span className="text-accent-gold font-normal italic">Visuals</span>
         </h1>
 
         {/* Slogan Heading */}

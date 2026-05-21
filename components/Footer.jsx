@@ -44,7 +44,7 @@ export default function Footer() {
               href="#home"
               className="serif-heading text-3xl font-bold tracking-widest text-text-primary block"
             >
-              FS <span className="text-accent-gold">VISUAL</span>
+              FS <span className="text-accent-gold">VISUALS</span>
             </a>
             <p className="serif-heading text-lg italic text-accent-warm font-light max-w-sm">
               &ldquo;Aap ki yaadon ka cinematic safar.&rdquo;
@@ -146,7 +146,7 @@ export default function Footer() {
 
           {/* Copyright notice */}
           <p className="text-[10px] text-text-muted font-light tracking-widest text-center sm:text-left">
-            © 2026 FS Visual. All rights reserved.
+            © 2026 FS Visuals. All rights reserved.
           </p>
 
           {/* Scroll back to top button */}

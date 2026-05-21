@@ -110,7 +110,7 @@ export default function About() {
             </h2>
             
             <p className="text-text-muted text-sm md:text-base font-light leading-relaxed mb-6">
-              Founded in the heart of Karachi, FS Visual was born out of a profound passion for visual 
+              Founded in the heart of Karachi, FS Visuals was born out of a profound passion for visual 
               storytelling. We believe that a wedding isn&apos;t just an event; it&apos;s a cinematic tapestry woven 
               with emotions, family bonds, and centuries-old cultural heritage. From the delicate application 
               of mehndi to the dramatic teardrops of rukhsati, our lenses document the soul of Pakistani events.
