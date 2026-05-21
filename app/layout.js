@@ -28,6 +28,9 @@ export const metadata = {
     locale: "en_PK",
     type: "website",
   },
+  verification: {
+    google: "DdSrKhHONmCz_OYa6_vdHjHgqGuZNQD_ad-8gdd7Uv4",
+  },
 };
 
 export default function RootLayout({ children }) {
