@@ -114,7 +114,23 @@ export default function Contact() {
         "template_50n78ud",
         templateParams,
         "_iB-PeMQ35Yb5DPCX"
-      )
+      ),
+      // 3. Save to Google Sheets
+      fetch("https://script.google.com/macros/s/AKfycbz3Bg5O8sravH0SQ6duYJY1T6rus3u-KVFS2VkY6X_SokMlAv-vRkJWT8Rd5ynVIQWuiA/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          date: formData.date,
+          eventType: "N/A",
+          details: formData.message
+        }),
+      })
     ])
     .then(() => {
       setSubmitted(true);
