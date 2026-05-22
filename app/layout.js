@@ -18,24 +18,49 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "FS Visuals | Cinematic Wedding Photography & Videography Karachi",
-  description: "FS Visuals captures your wedding, birthday, engagement, and Nikkah moments with a luxury, cinematic touch in Karachi, Pakistan. Aap ki yaadon ka cinematic safar.",
+  title: "FS Visuals | Cinematic Wedding Photography Karachi",
+  description: "FS Visuals captures your wedding, engagement, and Nikkah moments with a luxury cinematic touch in Karachi. Aap ki yaadon ka cinematic safar.",
   openGraph: {
-    title: "FS Visuals | Cinematic Wedding Photography & Videography Karachi",
-    description: "Aap ki yaadon ka cinematic safar. High-end wedding films and photography in Karachi.",
+    title: "FS Visuals | Cinematic Wedding Photography Karachi",
+    description: "FS Visuals captures your wedding, engagement, and Nikkah moments with a luxury cinematic touch in Karachi. Aap ki yaadon ka cinematic safar.",
     url: "https://thefsvisuals.com",
     siteName: "FS Visuals",
     locale: "en_PK",
     type: "website",
+  },
+  alternates: {
+    canonical: "https://thefsvisuals.com",
   },
   verification: {
     google: "alQ_LMMUJk1gBSRF8AUrngtvoCuUS4yH5FDmbn-GwQ0",
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "FS Visuals",
+  "image": "https://thefsvisuals.com/icon.svg",
+  "url": "https://thefsvisuals.com",
+  "telephone": "+923273129464",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Karachi",
+    "addressRegion": "Sindh",
+    "addressCountry": "PK"
+  },
+  "description": "FS Visuals captures your wedding, engagement, and Nikkah moments with a luxury cinematic touch in Karachi."
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${cormorant.variable} ${dmSans.variable} font-sans antialiased text-text-primary bg-bg-primary relative`}
       >
