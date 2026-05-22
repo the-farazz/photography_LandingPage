@@ -18,6 +18,17 @@ import hassanImg from "@/images/hassanPhotoGrapherCinematographer.jpg";
 
 const teamMembers = [
   {
+    name: "Moiz Alam",
+    role: "Senior Photographer, Videographer & Editor",
+    specialty: "Candid & Documentary Capture",
+    bio: "Captures natural raw expressions, laughter, and behind-the-scenes moments that often go unnoticed but tell the true story.",
+    image: moizImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com",
+    imageClass: "object-[35%_top] scale-[1.75] origin-[35%_top] group-hover:scale-[1.82]"
+  },
+  {
     name: "Faraz Alam",
     role: "Photographer & Editor",
     specialty: "Creative Direction & Fine Art",
@@ -86,17 +97,6 @@ const teamMembers = [
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923273129464",
     email: "mailto:the.fs.visualss@gmail.com"
-  },
-  {
-    name: "Moiz Alam",
-    role: "Senior Photographer, Videographer & Editor",
-    specialty: "Candid & Documentary Capture",
-    bio: "Captures natural raw expressions, laughter, and behind-the-scenes moments that often go unnoticed but tell the true story.",
-    image: moizImg,
-    instagram: "https://www.instagram.com/the_fs_visuals/",
-    whatsapp: "https://wa.me/923273129464",
-    email: "mailto:the.fs.visualss@gmail.com",
-    imageClass: "object-[35%_top] scale-[1.75] origin-[35%_top] group-hover:scale-[1.82]"
   }
 ];
 
