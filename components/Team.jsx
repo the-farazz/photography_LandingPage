@@ -13,6 +13,7 @@ import shariqImg from "@/images/shariqShahzadPhotographerEditor.jpg";
 import usmanImg from "@/images/usmanVideoEditor.jpg";
 import raeesImg from "@/images/RaeesPhotoEdiror.jpg";
 import hassanImg from "@/images/hassanPhotoGrapherCinematographer.jpg";
+import adilImg from "@/images/AdilDriver.jpeg";
 
 
 
@@ -97,6 +98,16 @@ const teamMembers = [
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923273129464",
     email: "mailto:the.fs.visualss@gmail.com"
+  },
+  {
+    name: "Adil Ansari",
+    role: "Driver",
+    specialty: "Logistics",
+    bio: "Ensures the team and equipment reach locations safely and on time, making every shoot smooth.",
+    image: adilImg,
+    instagram: "https://www.instagram.com/the_fs_visuals/",
+    whatsapp: "https://wa.me/923273129464",
+    email: "mailto:the.fs.visualss@gmail.com"
   }
 ];
 
@@ -129,6 +140,28 @@ export default function Team() {
       ref={containerRef}
       className="relative py-16 md:py-20 bg-bg-primary overflow-hidden"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": teamMembers.map((member, index) => ({
+              "@type": "ListItem",
+              "position": index + 1,
+              "item": {
+                "@type": "Person",
+                "name": member.name,
+                "jobTitle": member.role,
+                "worksFor": {
+                  "@type": "Organization",
+                  "name": "FS Visuals"
+                }
+              }
+            }))
+          })
+        }}
+      />
       {/* Subtle Background Radial Gradient */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.02)_0%,transparent_70%)] pointer-events-none" />
 
@@ -159,7 +192,7 @@ export default function Team() {
               <div className="relative aspect-[4/5] overflow-hidden w-full bg-black">
                 <Image
                   src={member.image}
-                  alt={member.name}
+                  alt={`${member.name} - ${member.role} at FS Visuals in Karachi`}
                   fill
                   placeholder="blur"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
