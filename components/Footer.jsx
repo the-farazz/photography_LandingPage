@@ -1,5 +1,5 @@
 "use client";
-import { Facebook, Instagram, ArrowUp } from "lucide-react";
+import { Facebook, Instagram, ArrowUp, Mail } from "lucide-react";
 
 const TiktokIcon = (props) => (
   <svg
@@ -107,13 +107,13 @@ export default function Footer() {
           {/* Social Links */}
           <div className="flex items-center space-x-4">
             <a
-              href="https://www.facebook.com/the.fs.visuals"
+              href="https://wa.me/923273129464"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 bg-bg-primary hover:bg-accent-gold hover:text-bg-primary text-text-muted transition-all duration-300 border border-white/5 hover:border-accent-gold"
-              aria-label="Facebook Profile"
+              aria-label="WhatsApp Contact"
             >
-              <Facebook className="w-4 h-4" />
+              <WhatsappIcon className="w-4 h-4" />
             </a>
             <a
               href="https://www.instagram.com/the_fs_visuals/"
@@ -125,6 +125,15 @@ export default function Footer() {
               <Instagram className="w-4 h-4" />
             </a>
             <a
+              href="https://www.facebook.com/the.fs.visuals"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2.5 bg-bg-primary hover:bg-accent-gold hover:text-bg-primary text-text-muted transition-all duration-300 border border-white/5 hover:border-accent-gold"
+              aria-label="Facebook Profile"
+            >
+              <Facebook className="w-4 h-4" />
+            </a>
+            <a
               href="https://www.tiktok.com/@the_fs_visuals"
               target="_blank"
               rel="noopener noreferrer"
@@ -134,13 +143,11 @@ export default function Footer() {
               <TiktokIcon className="w-4 h-4" />
             </a>
             <a
-              href="https://wa.me/923273129464"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:the.fs.visualss@gmail.com"
               className="p-2.5 bg-bg-primary hover:bg-accent-gold hover:text-bg-primary text-text-muted transition-all duration-300 border border-white/5 hover:border-accent-gold"
-              aria-label="WhatsApp Contact"
+              aria-label="Email Contact"
             >
-              <WhatsappIcon className="w-4 h-4" />
+              <Mail className="w-4 h-4" />
             </a>
           </div>
 

@@ -1,0 +1,14 @@
+Contact: tel:+923273129464
+Contact: https://thefsvisuals.com
+
+Preferred-Languages: en, ur
+
+Canonical: https://thefsvisuals.com/.well-known/security.txt
+
+Policy: https://thefsvisuals.com
+
+Expires: 2027-07-30T23:59:59Z
+
+Acknowledgments: https://thefsvisuals.com
+
+Hiring: https://thefsvisuals.com

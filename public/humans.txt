@@ -1,0 +1,53 @@
+/* TEAM */
+
+Business: FS Visuals
+Website: https://thefsvisuals.com
+Location: Karachi, Sindh, Pakistan
+
+Description:
+FS Visuals is a premium wedding photography and cinematic filmmaking studio specializing in luxury wedding coverage, engagement sessions, Nikkah photography, bridal portraits, and cinematic wedding films.
+
+Contact:
+Website: https://thefsvisuals.com
+WhatsApp: https://wa.me/923273129464
+Instagram: https://www.instagram.com/the_fs_visuals/
+Facebook: https://www.facebook.com/the.fs.visuals
+TikTok: https://www.tiktok.com/@the_fs_visuals
+Email: mailto:the.fs.visualss@gmail.com
+
+/* SITE */
+
+Framework:
+Next.js (App Router)
+
+Styling:
+Tailwind CSS
+
+Hosting:
+Vercel
+
+Performance Goals:
+- Fast loading
+- Mobile-first design
+- SEO optimized
+- Accessibility focused
+- Responsive across devices
+
+Content:
+- Hero
+- Services
+- Portfolio
+- About
+- Team
+- Testimonials
+- Pricing
+- Contact
+
+Primary Audience:
+Couples and families looking for premium wedding photography and cinematic filmmaking services in Karachi, Pakistan.
+
+/* THANK YOU */
+
+Thank you for visiting FS Visuals.
+
+If you're interested in collaborating, partnering, or learning more about our work, please get in touch through our official website.

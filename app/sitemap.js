@@ -1,11 +1,14 @@
+const BASE_URL = "https://thefsvisuals.com";
+
 export default function sitemap() {
+  const lastModified = new Date();
+
   return [
     {
-      url: 'https://thefsvisuals.com',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
+      url: BASE_URL,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 1.0,
     },
-    // Agar future mein aur pages banayein (jese /portfolio, /contact) toh yahan add karenge
-  ]
+  ];
 }

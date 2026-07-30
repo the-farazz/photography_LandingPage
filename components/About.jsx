@@ -110,10 +110,7 @@ export default function About() {
             </h2>
             
             <p className="text-text-muted text-sm md:text-base font-light leading-relaxed mb-6">
-              Founded in the heart of Karachi, FS Visuals was born out of a profound passion for visual 
-              storytelling. We believe that a wedding isn&apos;t just an event; it&apos;s a cinematic tapestry woven 
-              with emotions, family bonds, and centuries-old cultural heritage. From the delicate application 
-              of mehndi to the dramatic teardrops of rukhsati, our lenses document the soul of Pakistani events.
+              FS Visuals is a premium wedding photography and cinematic filmmaking studio based in Karachi, Pakistan. Founded and led by <strong>Faraz Alam</strong>, a professional wedding photographer and cinematic editor, our studio is dedicated to capturing timeless wedding stories through luxury cinematic visuals. We believe that a wedding isn&apos;t just an event; it&apos;s a cinematic tapestry woven with emotions, family bonds, and centuries-old cultural heritage.
             </p>
 
             <p className="text-text-muted text-sm md:text-base font-light leading-relaxed mb-10">
@@ -121,6 +118,16 @@ export default function About() {
               have crisscrossed the country to record love stories. We combine state-of-the-art camera systems 
               with custom, emotional color grading to capture authentic moments that stand out for generations.
             </p>
+
+            {/* Meet the Founder */}
+            <div className="mb-10">
+              <h3 className="serif-heading text-2xl font-bold text-text-primary mb-3">
+                Meet Faraz Alam
+              </h3>
+              <p className="text-text-muted text-sm md:text-base font-light leading-relaxed">
+                Faraz Alam is the founder, lead wedding photographer, and cinematic editor at FS Visuals. Since 2020, he has specialized in documenting weddings through cinematic storytelling, timeless photography, and emotional visual experiences. Under his direction, our team transforms your cultural heritage into legacy visual poetry.
+              </p>
+            </div>
 
             {/* Stat Counters Row */}
             <div className="grid grid-cols-3 gap-6 sm:gap-8 pt-8 border-t border-white/5">

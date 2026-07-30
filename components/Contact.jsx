@@ -327,20 +327,22 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* Email */}
+              {/* WhatsApp */}
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-bg-secondary border border-white/5 text-accent-gold rounded-none">
-                  <Mail className="w-5 h-5" />
+                  <WhatsappIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-bold tracking-widest uppercase text-text-muted mb-1">
-                    Email
+                    WhatsApp
                   </h4>
                   <a
-                    href="mailto:the.fs.visualss@gmail.com"
+                    href="https://wa.me/923273129464"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm font-light text-text-primary hover:text-accent-gold transition-colors"
                   >
-                    the.fs.visualss@gmail.com
+                    +92 327 3129464
                   </a>
                 </div>
               </div>
@@ -401,6 +403,24 @@ export default function Contact() {
                     className="text-sm font-light text-text-primary hover:text-accent-gold transition-colors"
                   >
                     @the_fs_visuals
+                  </a>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-bg-secondary border border-white/5 text-accent-gold rounded-none">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold tracking-widest uppercase text-text-muted mb-1">
+                    Email
+                  </h4>
+                  <a
+                    href="mailto:the.fs.visualss@gmail.com"
+                    className="text-sm font-light text-text-primary hover:text-accent-gold transition-colors"
+                  >
+                    the.fs.visualss@gmail.com
                   </a>
                 </div>
               </div>
