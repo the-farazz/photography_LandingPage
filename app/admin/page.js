@@ -12,6 +12,7 @@ import {
   Camera,
   Film,
   Compass,
+  BookOpen,
   Eye,
   Sliders,
 } from "lucide-react";
@@ -42,66 +43,72 @@ export default function AdminInvoicePage() {
 
   const initialDate = new Date();
 
-  // Multi-select services state
+  // Multi-select services state (with Album)
   const [services, setServices] = useState({
     photography: true,
     videography: true,
     drone: false,
+    album: false,
   });
 
   // Mobile active tab: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState("editor");
 
   const computeServiceTitleAndDesc = (serviceState, duration) => {
-    const { photography, videography, drone } = serviceState;
+    const { photography, videography, drone, album } = serviceState;
     const durText = duration || "Event";
 
-    if (photography && videography && drone) {
-      return {
-        title: "Photography, Videography & Drone Services",
-        desc: `Complete photography, cinematic video production & aerial drone coverage (${durText})`,
-      };
+    // Build Title
+    const titleParts = [];
+    if (photography) titleParts.push("Photography");
+    if (videography) titleParts.push("Videography");
+    if (drone) titleParts.push("Drone");
+    if (album) titleParts.push("Album");
+
+    let title = "Photography & Videography Services";
+    if (titleParts.length === 1) {
+      title = `${titleParts[0]} Services`;
+    } else if (titleParts.length === 2) {
+      title = `${titleParts[0]} & ${titleParts[1]} Services`;
+    } else if (titleParts.length > 2) {
+      title = `${titleParts.slice(0, -1).join(", ")} & ${titleParts[titleParts.length - 1]} Services`;
     }
-    if (photography && videography && !drone) {
-      return {
-        title: "Photography & Videography Services",
-        desc: `Complete photography & cinematic video production (${durText})`,
-      };
+
+    // Build Description
+    let desc = `Complete event coverage (${durText})`;
+    if (photography && videography && !drone && !album) {
+      desc = `Complete photography & cinematic video production (${durText})`;
+    } else if (photography && videography && drone && !album) {
+      desc = `Complete photography, cinematic video production & aerial drone coverage (${durText})`;
+    } else if (photography && videography && !drone && album) {
+      desc = `Complete photography, cinematic video production & luxury photo album (${durText})`;
+    } else if (photography && videography && drone && album) {
+      desc = `Complete photography, cinematic video production, aerial drone & luxury photo album (${durText})`;
+    } else if (photography && !videography && !drone && !album) {
+      desc = `High-resolution fine-art photography & candid coverage (${durText})`;
+    } else if (photography && !videography && drone && !album) {
+      desc = `High-resolution fine-art photography & aerial drone coverage (${durText})`;
+    } else if (photography && !videography && !drone && album) {
+      desc = `High-resolution fine-art photography & luxury printed photo album (${durText})`;
+    } else if (photography && !videography && drone && album) {
+      desc = `Fine-art photography, aerial drone coverage & luxury printed photo album (${durText})`;
+    } else if (!photography && videography && !drone && !album) {
+      desc = `On-location video production & coverage (${durText})`;
+    } else if (!photography && videography && drone && !album) {
+      desc = `Cinematic video production & aerial drone coverage (${durText})`;
+    } else if (!photography && videography && !drone && album) {
+      desc = `Cinematic video production & highlight photo album (${durText})`;
+    } else if (!photography && videography && drone && album) {
+      desc = `Cinematic video production, aerial drone coverage & highlight photo album (${durText})`;
+    } else if (!photography && !videography && drone && !album) {
+      desc = `Aerial drone footage & venue cinematography (${durText})`;
+    } else if (!photography && !videography && drone && album) {
+      desc = `Aerial drone cinematography & custom printed photo album (${durText})`;
+    } else if (!photography && !videography && !drone && album) {
+      desc = `Custom designed luxury handmade photo album (${durText})`;
     }
-    if (photography && !videography && drone) {
-      return {
-        title: "Photography & Drone Services",
-        desc: `High-resolution fine-art photography & aerial drone coverage (${durText})`,
-      };
-    }
-    if (!photography && videography && drone) {
-      return {
-        title: "Videography & Drone Services",
-        desc: `Cinematic video production & aerial drone coverage (${durText})`,
-      };
-    }
-    if (photography && !videography && !drone) {
-      return {
-        title: "Photography Services",
-        desc: `High-resolution fine-art photography & candid coverage (${durText})`,
-      };
-    }
-    if (!photography && videography && !drone) {
-      return {
-        title: "Videography Services",
-        desc: `On-location video production & coverage (${durText})`,
-      };
-    }
-    if (!photography && !videography && drone) {
-      return {
-        title: "Drone Cinematography Services",
-        desc: `Aerial drone footage & venue cinematography (${durText})`,
-      };
-    }
-    return {
-      title: "Photography & Videography Services",
-      desc: `Complete event coverage (${durText})`,
-    };
+
+    return { title, desc };
   };
 
   const [formData, setFormData] = useState({
@@ -129,7 +136,7 @@ export default function AdminInvoicePage() {
     const nextServices = { ...services, [key]: !services[key] };
     
     // Ensure at least one service remains checked
-    if (!nextServices.photography && !nextServices.videography && !nextServices.drone) {
+    if (!nextServices.photography && !nextServices.videography && !nextServices.drone && !nextServices.album) {
       return;
     }
 
@@ -505,12 +512,12 @@ FS Visuals Karachi | +92 327 3129464`;
               </span>
             </div>
 
-            {/* Multi-Select Service Chips (Photography, Videography, Drone) */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* Multi-Select Service Chips (Photography, Videography, Drone, Album) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => handleToggleService("photography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
                   services.photography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
@@ -523,7 +530,7 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("videography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
                   services.videography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
@@ -536,7 +543,7 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("drone")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
                   services.drone
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
@@ -544,6 +551,19 @@ FS Visuals Karachi | +92 327 3129464`;
               >
                 <Compass className="w-3.5 h-3.5 shrink-0" />
                 <span>Drone</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleToggleService("album")}
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
+                  services.album
+                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
+                    : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span>Album</span>
               </button>
             </div>
 
