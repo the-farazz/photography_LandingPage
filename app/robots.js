@@ -4,6 +4,7 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
+        disallow: "/admin",
       },
 
       // Optional: AI crawlers
