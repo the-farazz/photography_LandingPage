@@ -12,6 +12,8 @@ import {
   Camera,
   Film,
   Compass,
+  Eye,
+  Sliders,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
 import html2canvas from "html2canvas";
@@ -46,6 +48,9 @@ export default function AdminInvoicePage() {
     videography: true,
     drone: false,
   });
+
+  // Mobile active tab: 'editor' | 'preview'
+  const [mobileTab, setMobileTab] = useState("editor");
 
   const computeServiceTitleAndDesc = (serviceState, duration) => {
     const { photography, videography, drone } = serviceState;
@@ -283,78 +288,122 @@ FS Visuals Karachi | +92 327 3129464`;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-text-primary flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs font-semibold text-text-muted hover:text-accent-gold transition-colors py-1.5 px-3 rounded bg-white/5 border border-white/5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Website
-          </Link>
-          <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
-          <div>
-            <span className="serif-heading text-lg sm:text-xl font-bold tracking-wider text-text-primary">
-              FS <span className="text-accent-gold">VISUALS</span>
-            </span>
-            <span className="ml-2 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-accent-gold/20 text-accent-gold border border-accent-gold/30">
-              Admin Portal
-            </span>
+      {/* Responsive Top Navbar */}
+      <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-lg">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2">
+          {/* Left: Brand & Back */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <Link
+              href="/"
+              className="flex items-center justify-center p-2 sm:py-1.5 sm:px-3 text-xs font-semibold text-text-muted hover:text-accent-gold transition-colors rounded bg-white/5 border border-white/5"
+              title="Back to Website"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden md:inline ml-1.5">Back to Website</span>
+            </Link>
+
+            <div className="flex items-center gap-1.5">
+              <span className="serif-heading text-base sm:text-lg font-bold tracking-wider text-text-primary whitespace-nowrap">
+                FS <span className="text-accent-gold">VISUALS</span>
+              </span>
+              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-accent-gold/20 text-accent-gold border border-accent-gold/30 whitespace-nowrap hidden xs:inline-block">
+                Admin
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          {/* WhatsApp Text */}
-          <button
-            onClick={handleCopyWhatsAppSummary}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors uppercase tracking-wider"
-            title="Copy WhatsApp text"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{copied ? "Copied!" : "WhatsApp Text"}</span>
-          </button>
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* WhatsApp Text */}
+            <button
+              onClick={handleCopyWhatsAppSummary}
+              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors uppercase tracking-wider rounded-none"
+              title="Copy WhatsApp text"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="hidden lg:inline">{copied ? "Copied!" : "WhatsApp Text"}</span>
+            </button>
 
-          {/* Download Image Button */}
-          <button
-            onClick={handleDownloadPNG}
-            disabled={downloadingPng || downloadingPdf}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 bg-[#1b1b1b] border border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold transition-all uppercase tracking-wider disabled:opacity-50"
-            title="Download Invoice as Image"
-          >
-            {downloadingPng ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <ImageIcon className="w-3.5 h-3.5" />
-            )}
-            <span className="hidden sm:inline">{downloadingPng ? "Saving..." : "Save Image"}</span>
-          </button>
+            {/* Download Image Button */}
+            <button
+              onClick={handleDownloadPNG}
+              disabled={downloadingPng || downloadingPdf}
+              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-[#1b1b1b] border border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold transition-all uppercase tracking-wider disabled:opacity-50 rounded-none"
+              title="Download Invoice as Image"
+            >
+              {downloadingPng ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden lg:inline">{downloadingPng ? "Saving..." : "Save Image"}</span>
+            </button>
 
-          {/* Primary 1-Click Download PDF Button */}
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloadingPdf || downloadingPng}
-            className="flex items-center gap-2 text-xs font-bold px-4 py-2 bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50"
-          >
-            {downloadingPdf ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Downloading...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" /> Download PDF
-              </>
-            )}
-          </button>
+            {/* Primary 1-Click Download PDF Button */}
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloadingPdf || downloadingPng}
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-bold bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50 whitespace-nowrap rounded-none"
+            >
+              {downloadingPdf ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span className="hidden xs:inline">Downloading...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">Download PDF</span>
+                  <span className="xs:hidden">PDF</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
+      {/* Mobile Tab Switcher (Visible only on < lg screens) */}
+      <div className="lg:hidden bg-[#141414] border-b border-white/10 px-4 py-2 sticky top-[53px] z-20">
+        <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+          <button
+            type="button"
+            onClick={() => setMobileTab("editor")}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold tracking-wider uppercase transition-all ${
+              mobileTab === "editor"
+                ? "bg-accent-gold text-bg-primary shadow-sm"
+                : "bg-white/5 text-text-muted hover:text-white"
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>1. Edit Form</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileTab("preview")}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold tracking-wider uppercase transition-all ${
+              mobileTab === "preview"
+                ? "bg-accent-gold text-bg-primary shadow-sm"
+                : "bg-white/5 text-text-muted hover:text-white"
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>2. View Invoice</span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Split Grid */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Form Controls */}
-        <div className="lg:col-span-5 bg-[#121212] border border-white/10 p-6 sm:p-8 space-y-6 shadow-xl">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Left Column: Form Controls (Shown on desktop OR when mobileTab === 'editor') */}
+        <div
+          className={`lg:col-span-5 bg-[#121212] border border-white/10 p-4 sm:p-6 lg:p-8 space-y-6 shadow-xl ${
+            mobileTab === "editor" ? "block" : "hidden lg:block"
+          }`}
+        >
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
-              <h2 className="serif-heading text-xl font-bold text-text-primary">
+              <h2 className="serif-heading text-lg sm:text-xl font-bold text-text-primary">
                 Invoice Details
               </h2>
               <p className="text-xs text-text-muted mt-0.5">
@@ -363,7 +412,7 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
             <button
               onClick={handleResetSample}
-              className="flex items-center gap-1 text-[11px] font-semibold text-text-muted hover:text-accent-gold transition-colors"
+              className="flex items-center gap-1 text-[11px] font-semibold text-text-muted hover:text-accent-gold transition-colors py-1 px-2 rounded bg-white/5"
               title="Reset Sample"
             >
               <RotateCcw className="w-3 h-3" /> Reset
@@ -461,39 +510,39 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("photography")}
-                className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold border transition-all ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
                   services.photography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-3.5 h-3.5 shrink-0" />
                 <span>Photography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("videography")}
-                className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold border transition-all ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
                   services.videography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
-                <Film className="w-3.5 h-3.5" />
+                <Film className="w-3.5 h-3.5 shrink-0" />
                 <span>Videography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("drone")}
-                className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold border transition-all ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight ${
                   services.drone
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
                     : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
-                <Compass className="w-3.5 h-3.5" />
+                <Compass className="w-3.5 h-3.5 shrink-0" />
                 <span>Drone</span>
               </button>
             </div>
@@ -591,7 +640,7 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
 
             {/* Computed Remaining Balance Box */}
-            <div className="p-4 bg-[#1b1b1b] border border-accent-gold/30 flex items-center justify-between">
+            <div className="p-4 bg-[#1b1b1b] border border-accent-gold/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-widest text-text-muted block">
                   Remaining Balance Due:
@@ -601,7 +650,7 @@ FS Visuals Karachi | +92 327 3129464`;
                 </span>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() =>
@@ -611,7 +660,7 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "PAID",
                     })
                   }
-                  className="text-[10px] uppercase font-semibold px-2.5 py-1 bg-white/5 border border-white/10 text-text-muted hover:text-white"
+                  className="flex-1 sm:flex-none text-[10px] uppercase font-semibold px-2.5 py-1.5 bg-white/5 border border-white/10 text-text-muted hover:text-white text-center"
                 >
                   Full Paid
                 </button>
@@ -624,7 +673,7 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "PARTIALLY PAID",
                     })
                   }
-                  className="text-[10px] uppercase font-semibold px-2.5 py-1 bg-white/5 border border-white/10 text-text-muted hover:text-white"
+                  className="flex-1 sm:flex-none text-[10px] uppercase font-semibold px-2.5 py-1.5 bg-white/5 border border-white/10 text-text-muted hover:text-white text-center"
                 >
                   50% Adv
                 </button>
@@ -648,12 +697,23 @@ FS Visuals Karachi | +92 327 3129464`;
             />
           </div>
 
+          {/* Mobile Preview Switch Button */}
+          <div className="pt-4 border-t border-white/10 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileTab("preview")}
+              className="w-full py-3.5 bg-white/10 hover:bg-white/15 text-text-primary text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 border border-white/10 mb-3"
+            >
+              <Eye className="w-4 h-4 text-accent-gold" /> Preview Live Invoice
+            </button>
+          </div>
+
           {/* Big Download PDF Button */}
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-2">
             <button
               onClick={handleDownloadPDF}
               disabled={downloadingPdf || downloadingPng}
-              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50"
+              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50 rounded-none"
             >
               {downloadingPdf ? (
                 <>
@@ -668,20 +728,33 @@ FS Visuals Karachi | +92 327 3129464`;
           </div>
         </div>
 
-        {/* Right Column: Live Printable Preview */}
-        <div className="lg:col-span-7 flex flex-col items-center">
-          <div className="w-full flex items-center justify-between mb-3 px-2">
+        {/* Right Column: Live Printable Preview (Shown on desktop OR when mobileTab === 'preview') */}
+        <div
+          className={`lg:col-span-7 flex flex-col items-center w-full ${
+            mobileTab === "preview" ? "block" : "hidden lg:flex"
+          }`}
+        >
+          <div className="w-full flex items-center justify-between mb-3 px-1">
             <span className="text-xs uppercase font-bold tracking-[0.2em] text-text-muted">
               Invoice Live Preview
             </span>
-            <span className="text-[11px] text-accent-gold font-medium">
-              Exact 1:1 Output
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMobileTab("editor")}
+                className="lg:hidden text-xs font-bold text-accent-gold underline mr-2"
+              >
+                ← Back to Edit
+              </button>
+              <span className="text-[11px] text-accent-gold font-medium">
+                Exact 1:1 Output
+              </span>
+            </div>
           </div>
 
           {/* Invoice Document Canvas Container */}
-          <div className="w-full overflow-x-auto pb-8">
-            <div className="min-w-[700px] sm:min-w-0">
+          <div className="w-full overflow-x-auto pb-8 rounded-sm">
+            <div className="min-w-[650px] sm:min-w-0">
               <InvoiceDocument data={formData} />
             </div>
           </div>
