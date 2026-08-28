@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Download,
@@ -14,13 +14,68 @@ import {
   Compass,
   BookOpen,
   Eye,
+  EyeOff,
   Sliders,
+  Lock,
+  User,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 export default function AdminInvoicePage() {
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Check saved login session on mount
+  useEffect(() => {
+    try {
+      const savedAuth = localStorage.getItem("fsv_admin_logged_in");
+      if (savedAuth === "true") {
+        setIsAuthenticated(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAuthChecking(false);
+    }
+  }, []);
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setLoginError("");
+
+    // Hardcoded credentials match
+    if (usernameInput.trim() === "the-farazz" && passwordInput === "faraz123") {
+      try {
+        localStorage.setItem("fsv_admin_logged_in", "true");
+      } catch (e) {
+        console.error(e);
+      }
+      setIsAuthenticated(true);
+      setUsernameInput("");
+      setPasswordInput("");
+    } else {
+      setLoginError("Invalid username or password. Please try again.");
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("fsv_admin_logged_in");
+    } catch (e) {
+      console.error(e);
+    }
+    setIsAuthenticated(false);
+  };
+
   const formatDateToLong = (dateObj) => {
     return dateObj.toLocaleDateString("en-US", {
       month: "long",
@@ -171,7 +226,7 @@ export default function AdminInvoicePage() {
 
   const handleResetSample = () => {
     const now = new Date();
-    const defaultServices = { photography: true, videography: true, drone: false };
+    const defaultServices = { photography: true, videography: true, drone: false, album: false };
     const computed = computeServiceTitleAndDesc(defaultServices, "4 Days");
 
     setServices(defaultServices);
@@ -293,6 +348,113 @@ FS Visuals Karachi | +92 327 3129464`;
     setTimeout(() => setCopied(false), 2500);
   };
 
+  // If initial auth check is in progress
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-text-primary">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-gold" />
+      </div>
+    );
+  }
+
+  // 🔒 LOGIN MODAL / SCREEN IF NOT AUTHENTICATED
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
+        {/* Background radial lighting */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.06)_0%,transparent_70%)] pointer-events-none" />
+
+        {/* Login Box */}
+        <div className="relative z-10 w-full max-w-md bg-[#121212] border border-white/10 p-8 sm:p-10 shadow-2xl backdrop-blur-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center p-3 bg-white/5 border border-white/10 rounded-full mb-4 text-accent-gold">
+              <Lock className="w-6 h-6" />
+            </div>
+            <h1 className="serif-heading text-2xl sm:text-3xl font-bold tracking-wider text-text-primary mb-1">
+              FS <span className="text-accent-gold">VISUALS</span>
+            </h1>
+            <p className="text-xs uppercase font-bold tracking-widest text-accent-warm">
+              Admin Portal Sign In
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleLoginSubmit} className="space-y-5">
+            {loginError && (
+              <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-400 text-xs font-medium text-center">
+                {loginError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+                Username
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  placeholder="Enter username"
+                  className="w-full bg-[#1b1b1b] border border-white/10 pl-10 pr-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors rounded-none"
+                />
+                <User className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-full bg-[#1b1b1b] border border-white/10 pl-10 pr-10 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors rounded-none"
+                />
+                <Lock className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 mt-6 rounded-none"
+            >
+              Sign In to Portal →
+            </button>
+          </form>
+
+          {/* Footer link */}
+          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-gold transition-colors font-medium"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Main Website
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔓 AUTHENTICATED ADMIN GENERATOR SCREEN
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-text-primary flex flex-col font-sans">
       {/* Responsive Top Navbar */}
@@ -359,11 +521,21 @@ FS Visuals Karachi | +92 327 3129464`;
                 </>
               ) : (
                 <>
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-4 h-4" />
                   <span className="hidden xs:inline">Download PDF</span>
                   <span className="xs:hidden">PDF</span>
                 </>
               )}
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-2 text-xs font-bold bg-red-950/30 border border-red-500/30 text-red-400 hover:bg-red-900/40 transition-colors uppercase tracking-wider rounded-none ml-1"
+              title="Log Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Logout</span>
             </button>
           </div>
         </div>
