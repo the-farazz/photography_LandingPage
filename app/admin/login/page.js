@@ -40,13 +40,17 @@ export default function AdminLoginPage() {
       }
 
       let authEmail = email.trim();
-      // If user typed username (e.g. the-farazz or faraz), map to admin Supabase email
-      if (!authEmail.includes("@")) {
-        if (
-          authEmail.toLowerCase() === "the-farazz" ||
-          authEmail.toLowerCase() === "the_farazz" ||
-          authEmail.toLowerCase() === "faraz"
-        ) {
+      const lower = authEmail.toLowerCase();
+      // If user typed username or variation (the-farazz, faraz, the.fs.visualss, etc.), map to admin email
+      if (
+        !authEmail.includes("@") ||
+        lower.includes("the-farazz") ||
+        lower.includes("the_farazz") ||
+        lower.includes("faraz") ||
+        lower.includes("visual") ||
+        lower === "the.fs.visualss.com"
+      ) {
+        if (!lower.includes("@gmail.com")) {
           authEmail = "the.fs.visualss@gmail.com";
         }
       }

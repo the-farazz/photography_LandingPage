@@ -111,13 +111,24 @@ function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver 
 
 export async function POST(req) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://pzjkqklnjirovtydoycs.supabase.co";
-    const supabaseKey =
+    let supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/^["']|["']$/g, "");
+    let supabaseKey = (
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ""
+    ).trim().replace(/^["']|["']$/g, "");
 
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ success: true, tracking: false, note: "Supabase keys not set yet" });
+    const defaultUrl = "https://pzjkqklnjirovtydoycs.supabase.co";
+    const defaultKey = "sb_publishable_64rHjV3LSxtbnUSNVAFAKQ_TbxH1OW_";
+
+    if (!supabaseUrl || !supabaseUrl.includes("supabase.co") || supabaseUrl.startsWith("sb_")) {
+      supabaseUrl = defaultUrl;
+    } else if (!supabaseUrl.startsWith("http://") && !supabaseUrl.startsWith("https://")) {
+      supabaseUrl = `https://${supabaseUrl}`;
+    }
+
+    if (!supabaseKey || supabaseKey.startsWith("http")) {
+      supabaseKey = defaultKey;
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
