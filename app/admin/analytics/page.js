@@ -842,7 +842,6 @@ export default function AdminAnalyticsPage() {
             </table>
           </div>
         </div>
-      </main>
 
       {/* Visitor Timeline & Session Details Modal / Drawer */}
       {selectedVisitor && selectedVisitorData && (
