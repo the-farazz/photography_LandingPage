@@ -18,6 +18,7 @@ import {
   Sliders,
   Lock,
   User,
+  Mail,
   LogOut,
   ShieldCheck,
   Activity,
@@ -57,31 +58,22 @@ export default function AdminInvoicePage() {
 
     try {
       const supabase = createClient();
-      if (supabase && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: usernameInput.trim(),
-          password: passwordInput.trim(),
-        });
-        if (!error) {
-          try {
-            localStorage.setItem("fsv_admin_logged_in", "true");
-            localStorage.setItem("fsv_is_admin_device", "true");
-            localStorage.setItem("fsv_exclude_owner", "true");
-          } catch (e) {
-            console.error(e);
-          }
-          setIsAuthenticated(true);
-          setUsernameInput("");
-          setPasswordInput("");
-          return;
-        }
+      if (!supabase) {
+        setLoginError("Supabase is not configured. Please check your Supabase keys.");
+        return;
       }
 
-      // Hardcoded fallback match
-      if (
-        (usernameInput.trim() === "the-farazz" || usernameInput.trim() === "the.fs.visualss@gmail.com") &&
-        passwordInput === "faraz123"
-      ) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: usernameInput.trim(),
+        password: passwordInput.trim(),
+      });
+
+      if (error) {
+        setLoginError(error.message || "Invalid email or password. Please verify your Supabase user.");
+        return;
+      }
+
+      if (data?.session) {
         try {
           localStorage.setItem("fsv_admin_logged_in", "true");
           localStorage.setItem("fsv_is_admin_device", "true");
@@ -92,11 +84,9 @@ export default function AdminInvoicePage() {
         setIsAuthenticated(true);
         setUsernameInput("");
         setPasswordInput("");
-      } else {
-        setLoginError("Invalid username or password. Please try again.");
       }
     } catch (err) {
-      setLoginError("Login failed. Please verify your credentials.");
+      setLoginError(err.message || "Login failed. Please verify your Supabase user credentials.");
     }
   };
 
@@ -467,7 +457,7 @@ FS Visuals Karachi | +92 327 3129464`;
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
-                Username
+                Email or Username
               </label>
               <div className="relative">
                 <input
@@ -475,10 +465,10 @@ FS Visuals Karachi | +92 327 3129464`;
                   required
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="Enter username"
+                  placeholder="the.fs.visualss@gmail.com / the-farazz"
                   className="w-full bg-[#1b1b1b] border border-white/10 pl-10 pr-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors rounded-none"
                 />
-                <User className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
@@ -554,45 +544,17 @@ FS Visuals Karachi | +92 327 3129464`;
         <InvoiceDocument data={formData} id="printable-invoice-export" />
       </div>
 
-      {/* Responsive Top Navbar */}
+      {/* Top Invoice Action Header */}
       <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-lg">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2">
-          {/* Left: Brand & Back */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <Link
-              href="/"
-              className="flex items-center justify-center p-2 sm:py-1.5 sm:px-3 text-xs font-semibold text-text-muted hover:text-accent-gold transition-colors rounded bg-white/5 border border-white/5"
-              title="Back to Website"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden md:inline ml-1.5">Back to Website</span>
-            </Link>
-
-            <div className="flex items-center gap-1.5">
-              <span className="serif-heading text-base sm:text-lg font-bold tracking-wider text-text-primary whitespace-nowrap">
-                FS <span className="text-accent-gold">VISUALS</span>
-              </span>
-              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-accent-gold/20 text-accent-gold border border-accent-gold/30 whitespace-nowrap hidden xs:inline-block">
-                Admin
-              </span>
-            </div>
-          </div>
-
-          {/* Center Tabs: Invoices vs Telemetry */}
-          <div className="flex items-center bg-[#181818] p-1 border border-white/10 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase bg-accent-gold text-bg-primary shadow-sm">
-              <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">1. Invoice Generator</span>
-              <span className="sm:hidden">Invoices</span>
-            </div>
-            <Link
-              href="/admin/analytics"
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-text-muted hover:text-white transition-all"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">2. Visitor Telemetry</span>
-              <span className="sm:hidden">Analytics</span>
-            </Link>
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
+          {/* Left Title */}
+          <div>
+            <span className="text-[10px] font-bold tracking-[0.2em] text-accent-gold uppercase block">
+              Billing Console
+            </span>
+            <h1 className="serif-heading text-lg sm:text-xl font-bold text-text-primary leading-none mt-0.5">
+              Invoice Generator
+            </h1>
           </div>
 
           {/* Right Action Buttons */}
@@ -626,7 +588,7 @@ FS Visuals Karachi | +92 327 3129464`;
             <button
               onClick={handleDownloadPDF}
               disabled={downloadingPdf || downloadingPng}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-bold bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50 whitespace-nowrap rounded-none"
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-bold bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50 whitespace-nowrap rounded-none font-extrabold"
             >
               {downloadingPdf ? (
                 <>
@@ -640,16 +602,6 @@ FS Visuals Karachi | +92 327 3129464`;
                   <span className="xs:hidden">PDF</span>
                 </>
               )}
-            </button>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-2 text-xs font-bold bg-red-950/30 border border-red-500/30 text-red-400 hover:bg-red-900/40 transition-colors uppercase tracking-wider rounded-none ml-1"
-              title="Log Out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Logout</span>
             </button>
           </div>
         </div>

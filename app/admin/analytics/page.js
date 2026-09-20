@@ -392,125 +392,66 @@ export default function AdminAnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070707] text-text-primary flex flex-col font-sans">
-      {/* Top Navbar with Navigation Tabs */}
-      <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-xl">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
-          {/* Brand & Website Back */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <Link
-              href="/"
-              className="flex items-center justify-center p-2 sm:py-1.5 sm:px-3 text-xs font-semibold text-text-muted hover:text-accent-gold transition-colors rounded bg-white/5 border border-white/5"
-              title="Back to Website"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden md:inline ml-1.5">Back to Website</span>
-            </Link>
-
-            <div className="flex items-center gap-1.5">
-              <span className="serif-heading text-base sm:text-lg font-bold tracking-wider text-text-primary whitespace-nowrap">
-                FS <span className="text-accent-gold">VISUALS</span>
-              </span>
-              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-accent-gold/20 text-accent-gold border border-accent-gold/30 whitespace-nowrap hidden xs:inline-block">
-                Admin
-              </span>
+    <div className="min-h-screen bg-[#070707] text-text-primary flex flex-col font-sans p-3 sm:p-6 lg:p-8 space-y-6">
+      {/* Top Header Banner & Live Beacon */}
+      <div className="bg-[#121212] border border-white/10 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold tracking-[0.25em] text-accent-gold uppercase block">
+              LIVE TRAFFIC &amp; AUDIENCE TELEMETRY
+            </span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+              <span>{liveActiveCount} Live Online Now</span>
             </div>
           </div>
-
-          {/* Center Tabs: Invoices vs Telemetry */}
-          <div className="flex items-center bg-[#181818] p-1 border border-white/10">
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-text-muted hover:text-white transition-all"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">1. Invoice Generator</span>
-              <span className="sm:hidden">Invoices</span>
-            </Link>
-            <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase bg-accent-gold text-bg-primary shadow-sm">
-              <Activity className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">2. Visitor Telemetry</span>
-              <span className="sm:hidden">Analytics</span>
-            </div>
-          </div>
-
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => fetchAnalyticsData(true)}
-              disabled={refreshing}
-              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-white/5 border border-white/10 text-text-muted hover:text-accent-gold transition-colors uppercase tracking-wider"
-              title="Refresh Telemetry"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-accent-gold" : ""}`} />
-              <span className="hidden lg:inline">{refreshing ? "Refreshing..." : "Refresh"}</span>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-2 text-xs font-bold bg-red-950/30 border border-red-500/30 text-red-400 hover:bg-red-900/40 transition-colors uppercase tracking-wider ml-1"
-              title="Log Out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-6">
-        {/* Top Header Banner & Live Beacon */}
-        <div className="bg-[#121212] border border-white/10 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold tracking-[0.25em] text-accent-gold uppercase block">
-                LIVE TRAFFIC &amp; AUDIENCE TELEMETRY
-              </span>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                <span>{liveActiveCount} Live Online Now</span>
-              </div>
-            </div>
-            <h1 className="serif-heading text-xl sm:text-2xl font-bold text-text-primary mt-1">
-              Visitor Insights &amp; Geo Locations
-            </h1>
-            <p className="text-xs text-text-muted mt-0.5">
-              Exact records of who is visiting FS Visuals, locations, dwell durations, and device stats.
-            </p>
-          </div>
-
-          {/* Actions & Export */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <button
-              onClick={handleExportCSV}
-              disabled={filteredVisitors.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-white/5 border border-white/10 hover:border-accent-gold hover:text-accent-gold text-text-primary uppercase tracking-wider transition-all disabled:opacity-40"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-accent-gold" />
-              <span>Export CSV</span>
-            </button>
-          </div>
+          <h1 className="serif-heading text-xl sm:text-2xl font-bold text-text-primary mt-1">
+            Visitor Insights &amp; Geo Locations
+          </h1>
+          <p className="text-xs text-text-muted mt-0.5">
+            Exact records of who is visiting FS Visuals, locations, dwell durations, and device stats.
+          </p>
         </div>
 
-        {/* Error Notification if Supabase tables not found */}
-        {error && (
-          <div className="p-4 bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs rounded space-y-2">
-            <div className="flex items-center gap-2 font-bold text-sm text-amber-400">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Database Connection Notice</span>
-            </div>
-            <p>
-              {error}
-            </p>
-            <p className="text-[11px] text-amber-300/80">
-              Agar aapne abhi tak Supabase SQL Editor mein <code className="bg-black/40 px-1 py-0.5">sql/analytics_schema.sql</code> run nahi kiya, toh pehle usay run karein aur <code className="bg-black/40 px-1 py-0.5">.env.local</code> mein Supabase keys enter karein.
-            </p>
-          </div>
-        )}
+        {/* Actions & Export */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => fetchAnalyticsData(true)}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-white/5 border border-white/10 hover:border-accent-gold hover:text-accent-gold text-text-primary uppercase tracking-wider transition-all"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-accent-gold" : ""}`} />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
 
-        {/* KPI Metric Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredVisitors.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-accent-gold text-bg-primary uppercase tracking-wider font-extrabold hover:bg-accent-warm transition-all disabled:opacity-40"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Notice if Supabase connection has an issue */}
+      {error && (
+        <div className="p-4 bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs rounded space-y-2">
+          <div className="flex items-center gap-2 font-bold text-sm text-amber-400">
+            <AlertTriangle className="w-4 h-4" />
+            <span>Database Connection Notice</span>
+          </div>
+          <p>{error}</p>
+          <p className="text-[11px] text-amber-300/80">
+            Ensure that your Supabase tables are created and environment variables (<code className="bg-black/40 px-1 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code> &amp; <code className="bg-black/40 px-1 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>) are configured in your Vercel Project Settings.
+          </p>
+        </div>
+      )}
+
+      {/* KPI Metric Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* 1. Live Active */}
           <div className="bg-[#121212] border border-white/10 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
             <div className="flex items-center justify-between text-text-muted mb-2">

@@ -27,27 +27,17 @@ export default function AdminLoginPage() {
 
     try {
       const supabase = createClient();
-      
-      // If Supabase keys are configured, perform real Supabase Auth
-      if (supabase && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password.trim(),
-        });
+      if (!supabase) {
+        throw new Error("Supabase credentials not configured.");
+      }
 
-        if (error) {
-          throw error;
-        }
-      } else {
-        // Fallback: local master credentials check until Supabase keys are set
-        if (
-          (email.trim() === "the.fs.visualss@gmail.com" || email.trim() === "the-farazz") &&
-          password.trim() === "faraz123"
-        ) {
-          // Accepted
-        } else {
-          throw new Error("Invalid credentials. Please verify your login details.");
-        }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (error) {
+        throw error;
       }
 
       // Mark this device as Admin / Owner device (for owner telemetry exclusion)
@@ -60,7 +50,7 @@ export default function AdminLoginPage() {
       router.push("/admin");
       router.refresh();
     } catch (err) {
-      setErrorMsg(err.message || "Failed to sign in. Please verify your credentials.");
+      setErrorMsg(err.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
