@@ -61,7 +61,10 @@ export default function AnalyticsTracker() {
         let region = "Unknown";
 
         try {
-          const geoRes = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(2000) });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          const geoRes = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+          clearTimeout(timeoutId);
           if (geoRes.ok) {
             const geoData = await geoRes.json();
             city = geoData.city || "Unknown";
