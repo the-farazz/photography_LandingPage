@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowLeft, AlertCircle, Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
@@ -13,6 +13,14 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("fsv_admin_logged_in") === "true") {
+        router.push("/admin");
+      }
+    } catch {}
+  }, [router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

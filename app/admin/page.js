@@ -30,91 +30,6 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 export default function AdminInvoicePage() {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authChecking, setAuthChecking] = useState(true);
-  const [usernameInput, setUsernameInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState("");
-
-  // Check saved login session on mount
-  useEffect(() => {
-    try {
-      const savedAuth = localStorage.getItem("fsv_admin_logged_in");
-      if (savedAuth === "true") {
-        setIsAuthenticated(true);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setAuthChecking(false);
-    }
-  }, []);
-
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setLoginError("");
-
-    try {
-      const supabase = createClient();
-      if (!supabase) {
-        setLoginError("Supabase is not configured. Please check your Supabase keys.");
-        return;
-      }
-
-      let authEmail = usernameInput.trim();
-      // If user typed username (e.g. the-farazz or faraz), map to admin Supabase email
-      if (!authEmail.includes("@")) {
-        if (
-          authEmail.toLowerCase() === "the-farazz" ||
-          authEmail.toLowerCase() === "the_farazz" ||
-          authEmail.toLowerCase() === "faraz"
-        ) {
-          authEmail = "the.fs.visualss@gmail.com";
-        }
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: authEmail,
-        password: passwordInput.trim(),
-      });
-
-      if (error) {
-        setLoginError(error.message || "Invalid email or password. Please verify your Supabase user.");
-        return;
-      }
-
-      if (data?.session) {
-        try {
-          localStorage.setItem("fsv_admin_logged_in", "true");
-          localStorage.setItem("fsv_is_admin_device", "true");
-          localStorage.setItem("fsv_exclude_owner", "true");
-        } catch (e) {
-          console.error(e);
-        }
-        setIsAuthenticated(true);
-        setUsernameInput("");
-        setPasswordInput("");
-      }
-    } catch (err) {
-      setLoginError(err.message || "Login failed. Please verify your Supabase user credentials.");
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      const supabase = createClient();
-      if (supabase) {
-        await supabase.auth.signOut();
-      }
-      localStorage.removeItem("fsv_admin_logged_in");
-    } catch (e) {
-      console.error(e);
-    }
-    setIsAuthenticated(false);
-  };
-
   const formatDateToLong = (dateObj) => {
     return dateObj.toLocaleDateString("en-US", {
       month: "long",
@@ -135,8 +50,6 @@ export default function AdminInvoicePage() {
     return `INV-${year}-${randomNum}`;
   };
 
-  const initialDate = new Date();
-
   // Multi-select services state (with Album)
   const [services, setServices] = useState({
     photography: true,
@@ -147,6 +60,34 @@ export default function AdminInvoicePage() {
 
   // Mobile active tab: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState("editor");
+
+  const [formData, setFormData] = useState({
+    clientName: "Ahsan",
+    clientId: "CLI-2026-089",
+    invoiceNo: "INV-2026-0042",
+    rawDate: "2026-08-25",
+    invoiceDate: "August 25, 2026",
+    dueDate: "Upon Receipt",
+    serviceName: "Photography & Videography Services",
+    duration: "4 Days",
+    description: "Complete photography & cinematic video production (4 Days)",
+    totalAmount: 23000,
+    paidAmount: 8000,
+    status: "PARTIALLY PAID",
+    notes: "",
+  });
+
+  // Initialize random client ID and current date safely on client mount
+  useEffect(() => {
+    const now = new Date();
+    setFormData((prev) => ({
+      ...prev,
+      clientId: generateRandomClientId(),
+      invoiceNo: generateRandomInvoiceNo(),
+      rawDate: now.toISOString().split("T")[0],
+      invoiceDate: formatDateToLong(now),
+    }));
+  }, []);
 
   const computeServiceTitleAndDesc = (serviceState, duration) => {
     const { photography, videography, drone, album } = serviceState;
@@ -204,22 +145,6 @@ export default function AdminInvoicePage() {
 
     return { title, desc };
   };
-
-  const [formData, setFormData] = useState({
-    clientName: "Ahsan",
-    clientId: generateRandomClientId(),
-    invoiceNo: generateRandomInvoiceNo(),
-    rawDate: initialDate.toISOString().split("T")[0],
-    invoiceDate: formatDateToLong(initialDate),
-    dueDate: "Upon Receipt",
-    serviceName: "Photography & Videography Services",
-    duration: "4 Days",
-    description: "Complete photography & cinematic video production (4 Days)",
-    totalAmount: 23000,
-    paidAmount: 8000,
-    status: "PARTIALLY PAID",
-    notes: "",
-  });
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPng, setDownloadingPng] = useState(false);
@@ -428,113 +353,6 @@ FS Visuals Karachi | +92 327 3129464`;
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // If initial auth check is in progress
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-text-primary">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-gold" />
-      </div>
-    );
-  }
-
-  // 🔒 LOGIN MODAL / SCREEN IF NOT AUTHENTICATED
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
-        {/* Background radial lighting */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(201,168,76,0.06)_0%,transparent_70%)] pointer-events-none" />
-
-        {/* Login Box */}
-        <div className="relative z-10 w-full max-w-md bg-[#121212] border border-white/10 p-8 sm:p-10 shadow-2xl backdrop-blur-md">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center p-3 bg-white/5 border border-white/10 rounded-full mb-4 text-accent-gold">
-              <Lock className="w-6 h-6" />
-            </div>
-            <h1 className="serif-heading text-2xl sm:text-3xl font-bold tracking-wider text-text-primary mb-1">
-              FS <span className="text-accent-gold">VISUALS</span>
-            </h1>
-            <p className="text-xs uppercase font-bold tracking-widest text-accent-warm">
-              Admin Portal Sign In
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleLoginSubmit} className="space-y-5">
-            {loginError && (
-              <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-400 text-xs font-medium text-center">
-                {loginError}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
-                Email or Username
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="the.fs.visualss@gmail.com / the-farazz"
-                  className="w-full bg-[#1b1b1b] border border-white/10 pl-10 pr-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors rounded-none"
-                />
-                <Mail className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full bg-[#1b1b1b] border border-white/10 pl-10 pr-10 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors rounded-none"
-                />
-                <Lock className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 mt-6 rounded-none"
-            >
-              Sign In to Portal →
-            </button>
-          </form>
-
-          {/* Footer link */}
-          <div className="mt-8 pt-6 border-t border-white/5 text-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-gold transition-colors font-medium"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Main Website
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 🔓 AUTHENTICATED ADMIN GENERATOR SCREEN
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-text-primary flex flex-col font-sans">
       {/* Dedicated Offscreen Render Target for 100% Reliable PDF & Image Export across Mobile & PC */}

@@ -16,7 +16,7 @@ import {
   Sliders,
   Camera,
   Layers,
-  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -25,35 +25,50 @@ export default function AdminLayout({ children }) {
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userEmail, setUserEmail] = useState("the.fs.visualss@gmail.com");
-  const [liveCount, setLiveCount] = useState(0);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // If login page, render standalone without sidebar
   const isLoginPage = pathname === "/admin/login";
 
   useEffect(() => {
-    // Mark as admin device
+    // If on login page, skip protection
+    if (isLoginPage) {
+      setAuthChecked(true);
+      return;
+    }
+
     try {
+      // Mark as admin device
       localStorage.setItem("fsv_is_admin_device", "true");
       if (localStorage.getItem("fsv_exclude_owner") === null) {
         localStorage.setItem("fsv_exclude_owner", "true");
       }
+
+      const isLogged = localStorage.getItem("fsv_admin_logged_in") === "true";
+      if (!isLogged) {
+        router.push("/admin/login");
+        setAuthChecked(true);
+        return;
+      }
+
+      setIsAuthenticated(true);
     } catch {}
 
     const supabase = createClient();
-    if (!supabase) return;
+    if (supabase) {
+      supabase.auth
+        .getUser()
+        .then(({ data }) => {
+          if (data?.user?.email) {
+            setUserEmail(data.user.email);
+          }
+        })
+        .catch(() => {});
+    }
 
-    // Fetch user profile
-    const checkUser = async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        if (data?.user?.email) {
-          setUserEmail(data.user.email);
-        }
-      } catch (e) {}
-    };
-
-    checkUser();
-  }, []);
+    setAuthChecked(true);
+  }, [pathname, isLoginPage, router]);
 
   const handleLogout = async () => {
     try {
@@ -63,11 +78,20 @@ export default function AdminLayout({ children }) {
       }
       localStorage.removeItem("fsv_admin_logged_in");
     } catch {}
+    setIsAuthenticated(false);
     router.push("/admin/login");
   };
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  if (!authChecked || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#070707] flex items-center justify-center text-text-primary">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-gold" />
+      </div>
+    );
   }
 
   const navItems = [
