@@ -20,8 +20,11 @@ import {
   User,
   LogOut,
   ShieldCheck,
+  Activity,
+  FileText,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
+import { createClient } from "@/lib/supabase/client";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -48,27 +51,61 @@ export default function AdminInvoicePage() {
     }
   }, []);
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError("");
 
-    // Hardcoded credentials match
-    if (usernameInput.trim() === "the-farazz" && passwordInput === "faraz123") {
-      try {
-        localStorage.setItem("fsv_admin_logged_in", "true");
-      } catch (e) {
-        console.error(e);
+    try {
+      const supabase = createClient();
+      if (supabase && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: usernameInput.trim(),
+          password: passwordInput.trim(),
+        });
+        if (!error) {
+          try {
+            localStorage.setItem("fsv_admin_logged_in", "true");
+            localStorage.setItem("fsv_is_admin_device", "true");
+            localStorage.setItem("fsv_exclude_owner", "true");
+          } catch (e) {
+            console.error(e);
+          }
+          setIsAuthenticated(true);
+          setUsernameInput("");
+          setPasswordInput("");
+          return;
+        }
       }
-      setIsAuthenticated(true);
-      setUsernameInput("");
-      setPasswordInput("");
-    } else {
-      setLoginError("Invalid username or password. Please try again.");
+
+      // Hardcoded fallback match
+      if (
+        (usernameInput.trim() === "the-farazz" || usernameInput.trim() === "the.fs.visualss@gmail.com") &&
+        passwordInput === "faraz123"
+      ) {
+        try {
+          localStorage.setItem("fsv_admin_logged_in", "true");
+          localStorage.setItem("fsv_is_admin_device", "true");
+          localStorage.setItem("fsv_exclude_owner", "true");
+        } catch (e) {
+          console.error(e);
+        }
+        setIsAuthenticated(true);
+        setUsernameInput("");
+        setPasswordInput("");
+      } else {
+        setLoginError("Invalid username or password. Please try again.");
+      }
+    } catch (err) {
+      setLoginError("Login failed. Please verify your credentials.");
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       localStorage.removeItem("fsv_admin_logged_in");
     } catch (e) {
       console.error(e);
@@ -539,6 +576,23 @@ FS Visuals Karachi | +92 327 3129464`;
                 Admin
               </span>
             </div>
+          </div>
+
+          {/* Center Tabs: Invoices vs Telemetry */}
+          <div className="flex items-center bg-[#181818] p-1 border border-white/10 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase bg-accent-gold text-bg-primary shadow-sm">
+              <FileText className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">1. Invoice Generator</span>
+              <span className="sm:hidden">Invoices</span>
+            </div>
+            <Link
+              href="/admin/analytics"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-text-muted hover:text-white transition-all"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">2. Visitor Telemetry</span>
+              <span className="sm:hidden">Analytics</span>
+            </Link>
           </div>
 
           {/* Right Action Buttons */}
