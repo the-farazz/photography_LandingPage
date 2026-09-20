@@ -30,9 +30,24 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-function groupVisitorLogsIntoSessions(logs) {
+function groupVisitorLogsIntoSessions(logs, visitorRecord = null) {
   if (!logs || logs.length === 0) {
-    return { sessions: [], totalTimeSeconds: 0, totalTimeFormatted: "0s" };
+    const start = visitorRecord?.first_seen;
+    const end = visitorRecord?.last_seen;
+    let fallbackTime = "< 10s total";
+    if (start && end) {
+      const diffSec = Math.max(0, Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000));
+      if (diffSec > 0) {
+        const m = Math.floor(diffSec / 60);
+        const s = diffSec % 60;
+        fallbackTime = m > 0 ? `${m}m ${s}s total` : `${s}s total`;
+      }
+    }
+    return {
+      sessions: [],
+      totalTimeSeconds: 0,
+      totalTimeFormatted: fallbackTime,
+    };
   }
 
   const sorted = [...logs].sort(
@@ -70,9 +85,7 @@ function groupVisitorLogsIntoSessions(logs) {
     const endMs = new Date(endIso).getTime();
     const diffSec = Math.max(0, Math.floor((endMs - startMs) / 1000));
 
-    // Accurate duration calculation
-    const estimatedSec = diffSec;
-    grandTotalSeconds += estimatedSec;
+    grandTotalSeconds += diffSec;
 
     let durationFormatted = "Quick View (< 5s)";
     if (diffSec > 0) {
@@ -82,23 +95,42 @@ function groupVisitorLogsIntoSessions(logs) {
     }
 
     const uniquePages = Array.from(
-      new Set(grp.map((g) => (g.path === "/" ? "FS Visuals Home" : g.path || "Home")))
+      new Set(
+        grp.map((g) => {
+          if (!g.path || g.path === "/") return "FS Visuals Home";
+          if (g.path.includes("invoice")) return "Invoice Tool";
+          if (g.path.includes("films")) return "Wedding Films";
+          if (g.path.includes("about")) return "About FS Visuals";
+          if (g.path.includes("contact")) return "Contact & Booking";
+          return g.path;
+        })
+      )
     );
 
     return {
       id: `session_${idx + 1}`,
+      sessionNumber: idx + 1,
       startTime: startIso,
       endTime: endIso,
-      durationSeconds: estimatedSec,
+      durationSeconds: diffSec,
       durationFormatted,
       pageViews: grp.length,
       city: grp[0].city || "Unknown",
       country: grp[0].country || "Unknown",
       pages: uniquePages,
+      logs: grp,
     };
   });
 
   sessions.reverse();
+
+  // If grandTotalSeconds is 0 but first_seen / last_seen on visitor indicates longer dwell
+  if (grandTotalSeconds === 0 && visitorRecord?.first_seen && visitorRecord?.last_seen) {
+    const vDiffSec = Math.max(0, Math.floor((new Date(visitorRecord.last_seen).getTime() - new Date(visitorRecord.first_seen).getTime()) / 1000));
+    if (vDiffSec > 0) {
+      grandTotalSeconds = vDiffSec;
+    }
+  }
 
   let totalTimeFormatted = "< 10s total";
   if (grandTotalSeconds > 0) {
@@ -357,16 +389,35 @@ export default function AdminAnalyticsPage() {
 
   const formatDateTime = (iso) => {
     if (!iso) return "-";
-    const d = new Date(iso);
-    return d.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return iso;
+    }
+  };
+
+  const formatTimeOnly = (iso) => {
+    if (!iso) return "-";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return iso;
+    }
   };
 
   const formatTimeAgo = (iso) => {
@@ -393,13 +444,10 @@ export default function AdminAnalyticsPage() {
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffSecs < 5 || startIso === endIso) return "Instant Ping (< 2s)";
-    if (visitCount && visitCount > 1) {
-      if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m between visits`;
-      return `${diffDays}d ${diffHours % 24}h between visits`;
-    }
     if (diffSecs < 60) return `${diffSecs}s active dwell`;
     if (diffMins < 60) return `${diffMins}m ${diffSecs % 60}s active dwell`;
-    return `${diffHours}h ${diffMins % 60}m span`;
+    if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m span`;
+    return `${diffDays}d ${diffHours % 24}h span`;
   };
 
   // Filtered Segments (Excluding owner device when exclusion mode is active)
@@ -1177,8 +1225,9 @@ export default function AdminAnalyticsPage() {
       {/* ========================================================================= */}
       {selectedVisitor &&
         (() => {
-          const sessionData = groupVisitorLogsIntoSessions(visitorLogs);
+          const sessionData = groupVisitorLogsIntoSessions(visitorLogs, selectedVisitor);
           const lead = leadsMap[selectedVisitor.visitor_id];
+          const totalVisitsCount = Math.max(selectedVisitor.visit_count || 1, visitorLogs.length || 1);
 
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
@@ -1236,13 +1285,15 @@ export default function AdminAnalyticsPage() {
 
                   <div>
                     <span className="text-[10px] text-text-muted block uppercase font-mono tracking-wider">
-                      Total Visits (Sessions)
+                      Total Visits &amp; Hits
                     </span>
                     <span className="text-accent-gold font-bold flex items-center gap-1.5 mt-1 text-xs font-mono">
                       <RotateCcw className="w-3.5 h-3.5 text-accent-gold shrink-0" />
                       <span>
-                        {sessionData.sessions.length || 1}{" "}
-                        {sessionData.sessions.length === 1 ? "Visit" : "Visits"}
+                        {totalVisitsCount}x Visits
+                        {sessionData.sessions.length > 0
+                          ? ` (${sessionData.sessions.length} ${sessionData.sessions.length === 1 ? "Session" : "Sessions"})`
+                          : ""}
                       </span>
                     </span>
                   </div>
@@ -1314,7 +1365,7 @@ export default function AdminAnalyticsPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="px-2 py-0.5 rounded-lg bg-accent-gold/15 text-accent-gold text-[10px] font-mono font-bold border border-accent-gold/30">
-                                Visit #{sessionData.sessions.length - idx}
+                                Session #{sessionData.sessions.length - idx}
                               </span>
                               <span className="text-xs font-semibold text-white">
                                 {formatTimeAgo(session.startTime)}
@@ -1327,18 +1378,15 @@ export default function AdminAnalyticsPage() {
                             </div>
                           </div>
 
-                          <div className="text-xs text-slate-300 space-y-1 pl-2 border-l-2 border-accent-gold/40">
+                          <div className="text-xs text-slate-300 space-y-1.5 pl-2 border-l-2 border-accent-gold/40">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="text-text-muted">Time Window:</span>
                               <span className="font-mono text-slate-200">
                                 {isSameMinute
                                   ? formatDateTime(session.startTime)
-                                  : `${formatDateTime(session.startTime)} – ${new Date(
+                                  : `${formatDateTime(session.startTime)} – ${formatTimeOnly(
                                       session.endTime
-                                    ).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}`}
+                                    )}`}
                               </span>
                             </div>
 
@@ -1352,6 +1400,32 @@ export default function AdminAnalyticsPage() {
                                 ({session.pages.join(", ")})
                               </span>
                             </div>
+
+                            {session.logs && session.logs.length > 1 && (
+                              <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
+                                <span className="text-[10px] uppercase font-mono tracking-wider text-text-muted block">
+                                  Session Page Views Timeline:
+                                </span>
+                                <div className="space-y-1 pl-1">
+                                  {session.logs.map((lg, logIdx) => (
+                                    <div
+                                      key={lg.id || logIdx}
+                                      className="flex items-center justify-between text-[11px] text-slate-400"
+                                    >
+                                      <span className="flex items-center gap-1.5 truncate">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-accent-gold shrink-0" />
+                                        <span className="text-slate-200">
+                                          {lg.path === "/" ? "FS Visuals Home (/)" : lg.path}
+                                        </span>
+                                      </span>
+                                      <span className="font-mono text-[10px] text-text-muted shrink-0">
+                                        {formatTimeOnly(lg.visited_at)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
