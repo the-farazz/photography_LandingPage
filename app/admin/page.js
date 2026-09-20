@@ -63,8 +63,20 @@ export default function AdminInvoicePage() {
         return;
       }
 
+      let authEmail = usernameInput.trim();
+      // If user typed username (e.g. the-farazz or faraz), map to admin Supabase email
+      if (!authEmail.includes("@")) {
+        if (
+          authEmail.toLowerCase() === "the-farazz" ||
+          authEmail.toLowerCase() === "the_farazz" ||
+          authEmail.toLowerCase() === "faraz"
+        ) {
+          authEmail = "the.fs.visualss@gmail.com";
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: usernameInput.trim(),
+        email: authEmail,
         password: passwordInput.trim(),
       });
 

@@ -31,8 +31,20 @@ export default function AdminLoginPage() {
         throw new Error("Supabase credentials not configured.");
       }
 
+      let authEmail = email.trim();
+      // If user typed username (e.g. the-farazz or faraz), map to admin Supabase email
+      if (!authEmail.includes("@")) {
+        if (
+          authEmail.toLowerCase() === "the-farazz" ||
+          authEmail.toLowerCase() === "the_farazz" ||
+          authEmail.toLowerCase() === "faraz"
+        ) {
+          authEmail = "the.fs.visualss@gmail.com";
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: authEmail,
         password: password.trim(),
       });
 
@@ -50,7 +62,7 @@ export default function AdminLoginPage() {
       router.push("/admin");
       router.refresh();
     } catch (err) {
-      setErrorMsg(err.message || "Invalid email or password.");
+      setErrorMsg(err.message || "Invalid email, username, or password.");
     } finally {
       setLoading(false);
     }
