@@ -402,9 +402,8 @@ export default function AdminAnalyticsPage() {
     return `${diffHours}h ${diffMins % 60}m span`;
   };
 
-  // Filtered Segments (Excluding local testing, unknown locations, and owner device if exclude mode is active)
+  // Filtered Segments (Excluding owner device when exclusion mode is active)
   const realVisitors = visitors.filter((v) => {
-    if (v.country === "Unknown" || v.ip === "::1" || v.ip === "127.0.0.1") return false;
     if (v.bot_type === "Admin / Owner Device") return false;
     if (excludeOwner && myVisitorId && v.visitor_id === myVisitorId) return false;
     return !isBotRecord(v);
@@ -417,7 +416,7 @@ export default function AdminAnalyticsPage() {
   const anonymousVisitors = realVisitors.filter(
     (v) => !v.visitor_name && !leadsMap[v.visitor_id]
   );
-  const botVisitors = visitors.filter((v) => isBotRecord(v));
+  const botVisitors = visitors.filter((v) => isBotRecord(v) || v.bot_type === "Admin / Owner Device");
 
   let baseVisitors =
     trafficFilter === "real"
@@ -679,11 +678,14 @@ export default function AdminAnalyticsPage() {
                   <span>1. Landed on Portfolio</span>
                 </span>
                 <span className="font-semibold text-white font-mono">
-                  {totalHumanVisitors} Visitors (100%)
+                  {totalHumanVisitors} Visitors ({totalHumanVisitors > 0 ? "100%" : "0%"})
                 </span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full w-full" />
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{ width: totalHumanVisitors > 0 ? "100%" : "0%" }}
+                />
               </div>
             </div>
 
@@ -697,11 +699,14 @@ export default function AdminAnalyticsPage() {
                   <span>2. Explored Capabilities &amp; Wedding Films</span>
                 </span>
                 <span className="font-semibold text-slate-300 font-mono">
-                  {Math.max(1, Math.round(totalHumanVisitors * 0.75))} Visitors (75%)
+                  {totalHumanVisitors > 0 ? Math.round(totalHumanVisitors * 0.75) : 0} Visitors ({totalHumanVisitors > 0 ? "75%" : "0%"})
                 </span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full w-[75%]" />
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                  style={{ width: totalHumanVisitors > 0 ? "75%" : "0%" }}
+                />
               </div>
             </div>
 
@@ -715,11 +720,14 @@ export default function AdminAnalyticsPage() {
                   <span>3. Clicked WhatsApp / Booking Inquiries</span>
                 </span>
                 <span className="font-semibold text-slate-300 font-mono">
-                  {Math.max(1, Math.round(totalHumanVisitors * 0.4))} Visitors (40%)
+                  {totalHumanVisitors > 0 ? Math.round(totalHumanVisitors * 0.4) : 0} Visitors ({totalHumanVisitors > 0 ? "40%" : "0%"})
                 </span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-accent-gold rounded-full w-[40%]" />
+                <div
+                  className="h-full bg-accent-gold rounded-full transition-all duration-500"
+                  style={{ width: totalHumanVisitors > 0 ? "40%" : "0%" }}
+                />
               </div>
             </div>
 
@@ -738,8 +746,13 @@ export default function AdminAnalyticsPage() {
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400 rounded-full"
-                  style={{ width: `${Math.max(15, Number(conversionRate))}%` }}
+                  className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                  style={{
+                    width:
+                      totalHumanVisitors > 0 && totalLeadsCount > 0
+                        ? `${Math.min(100, Math.max(5, Number(conversionRate)))}%`
+                        : "0%",
+                  }}
                 />
               </div>
             </div>
