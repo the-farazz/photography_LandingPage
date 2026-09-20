@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-export default function InvoiceDocument({ data }) {
+export default function InvoiceDocument({ data, id = "printable-invoice" }) {
   const {
     clientName = "Ahsan",
     clientId = "CLI-2026-089",
@@ -39,7 +39,7 @@ export default function InvoiceDocument({ data }) {
 
   return (
     <div
-      id="printable-invoice"
+      id={id}
       className="bg-white text-black w-full max-w-[800px] mx-auto p-10 md:p-12 shadow-2xl box-border selection:bg-neutral-200"
       style={{
         fontFamily: "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif",

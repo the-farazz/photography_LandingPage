@@ -252,21 +252,28 @@ export default function AdminInvoicePage() {
     Number(formData.totalAmount || 0) - Number(formData.paidAmount || 0)
   );
 
-  // 1-Click Direct Download as PDF (No printer dialog)
+  // 1-Click Direct Download as PDF (Rock-solid across Mobile and PC)
   const handleDownloadPDF = async () => {
-    const element = document.getElementById("printable-invoice");
-    if (!element) return;
+    const element =
+      document.getElementById("printable-invoice-export") ||
+      document.getElementById("printable-invoice-preview") ||
+      document.getElementById("printable-invoice");
+    if (!element) {
+      alert("Invoice element not found. Please try again.");
+      return;
+    }
 
     try {
       setDownloadingPdf(true);
       const canvas = await html2canvas(element, {
-        scale: 2.5,
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
+        windowWidth: 800,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -275,7 +282,7 @@ export default function AdminInvoicePage() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
+
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       const ratio = imgWidth / imgHeight;
@@ -293,36 +300,70 @@ export default function AdminInvoicePage() {
 
       pdf.addImage(imgData, "JPEG", xOffset, yOffset, renderWidth, renderHeight);
       const filename = `${formData.invoiceNo || "Invoice"}_${formData.clientName || "Client"}.pdf`.replace(/\s+/g, "_");
-      pdf.save(filename);
+
+      // Robust Blob Download trigger for Mobile (iOS Safari / Chrome) and PC
+      const pdfBlob = pdf.output("blob");
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 2500);
     } catch (err) {
       console.error("PDF generation error:", err);
+      alert("Error generating PDF. Please try again.");
     } finally {
       setDownloadingPdf(false);
     }
   };
 
-  // 1-Click Direct Download as High-Res Image (PNG)
+  // 1-Click Direct Download as High-Res Image (PNG) (Mobile & PC compatible via Blob)
   const handleDownloadPNG = async () => {
-    const element = document.getElementById("printable-invoice");
-    if (!element) return;
+    const element =
+      document.getElementById("printable-invoice-export") ||
+      document.getElementById("printable-invoice-preview") ||
+      document.getElementById("printable-invoice");
+    if (!element) {
+      alert("Invoice element not found. Please try again.");
+      return;
+    }
 
     try {
       setDownloadingPng(true);
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
+        windowWidth: 800,
       });
 
-      const link = document.createElement("a");
       const filename = `${formData.invoiceNo || "Invoice"}_${formData.clientName || "Client"}.png`.replace(/\s+/g, "_");
-      link.download = filename;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setDownloadingPng(false);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+          setDownloadingPng(false);
+        }, 2500);
+      }, "image/png");
     } catch (err) {
       console.error("Image generation error:", err);
-    } finally {
+      alert("Error saving image. Please try again.");
       setDownloadingPng(false);
     }
   };
@@ -457,6 +498,25 @@ FS Visuals Karachi | +92 327 3129464`;
   // 🔓 AUTHENTICATED ADMIN GENERATOR SCREEN
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-text-primary flex flex-col font-sans">
+      {/* Dedicated Offscreen Render Target for 100% Reliable PDF & Image Export across Mobile & PC */}
+      <div
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "0px",
+          width: "800px",
+          minWidth: "800px",
+          maxWidth: "800px",
+          zIndex: -9999,
+          pointerEvents: "none",
+          opacity: 1,
+          visibility: "visible",
+        }}
+        aria-hidden="true"
+      >
+        <InvoiceDocument data={formData} id="printable-invoice-export" />
+      </div>
+
       {/* Responsive Top Navbar */}
       <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-lg">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2">
@@ -945,10 +1005,40 @@ FS Visuals Karachi | +92 327 3129464`;
           </div>
 
           {/* Invoice Document Canvas Container */}
-          <div className="w-full overflow-x-auto pb-8 rounded-sm">
+          <div className="w-full overflow-x-auto pb-6 rounded-sm">
             <div className="min-w-[650px] sm:min-w-0">
-              <InvoiceDocument data={formData} />
+              <InvoiceDocument data={formData} id="printable-invoice-preview" />
             </div>
+          </div>
+
+          {/* Mobile Quick Action Buttons on Preview Screen */}
+          <div className="w-full grid grid-cols-2 gap-2.5 lg:hidden pb-6">
+            <button
+              type="button"
+              onClick={handleDownloadPNG}
+              disabled={downloadingPng || downloadingPdf}
+              className="py-3 bg-[#1b1b1b] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50"
+            >
+              {downloadingPng ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImageIcon className="w-4 h-4 text-accent-gold" />
+              )}
+              Save Image
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadPDF}
+              disabled={downloadingPdf || downloadingPng}
+              className="py-3 bg-accent-gold text-bg-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-accent-warm shadow-md shadow-accent-gold/10 disabled:opacity-50"
+            >
+              {downloadingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Download PDF
+            </button>
           </div>
         </div>
       </main>
