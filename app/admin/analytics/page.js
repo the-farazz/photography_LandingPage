@@ -450,8 +450,9 @@ export default function AdminAnalyticsPage() {
     return `${diffDays}d ${diffHours % 24}h span`;
   };
 
-  // Filtered Segments (Excluding owner device when exclusion mode is active)
+  // Filtered Segments (Excluding local testing, unknown locations, and owner device if exclude mode is active)
   const realVisitors = visitors.filter((v) => {
+    if (v.country === "Unknown" || v.ip === "::1" || v.ip === "127.0.0.1") return false;
     if (v.bot_type === "Admin / Owner Device") return false;
     if (excludeOwner && myVisitorId && v.visitor_id === myVisitorId) return false;
     return !isBotRecord(v);
