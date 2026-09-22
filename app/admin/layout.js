@@ -164,17 +164,7 @@ export default function AdminLayout({ children }) {
                   <Icon className={`w-4 h-4 ${item.isActive ? "text-bg-primary" : "text-accent-gold"}`} />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-semibold uppercase ${
-                      item.isActive
-                        ? "bg-black/20 text-bg-primary border border-black/20"
-                        : "bg-white/5 text-accent-gold border border-accent-gold/20"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
+
               </Link>
             );
           })}

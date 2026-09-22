@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Sparkles, ArrowRight, X, User, CheckCircle2, Camera } from "lucide-react";
+import { ArrowRight, X, User, CheckCircle2, Camera } from "lucide-react";
 
 export default function WelcomeModal() {
   const pathname = usePathname();
@@ -124,8 +124,7 @@ export default function WelcomeModal() {
               </div>
 
               <div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent-gold">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-accent-gold">
                   <span>Welcome to FS Visuals</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold serif-heading text-white tracking-tight">
