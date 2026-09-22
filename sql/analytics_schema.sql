@@ -46,6 +46,22 @@ create table if not exists public.analytics_events (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- 4. CONTACT INQUIRIES & DIRECT WEDDING LEADS
+create table if not exists public.contact_inquiries (
+    id uuid primary key default gen_random_uuid(),
+    visitor_id text references public.analytics_visitors(visitor_id) on delete set null,
+    name text not null,
+    email text not null,
+    phone text,
+    event_date text,
+    subject text default 'Wedding Photography Inquiry',
+    message text,
+    country text,
+    city text,
+    is_read boolean default false,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Indexes for lightning fast queries and dashboard performance
 create index if not exists idx_analytics_visitors_last_seen on public.analytics_visitors(last_seen desc);
 create index if not exists idx_analytics_visitors_first_seen on public.analytics_visitors(first_seen desc);
@@ -55,11 +71,14 @@ create index if not exists idx_analytics_visit_logs_visited_at on public.analyti
 create index if not exists idx_analytics_visit_logs_visitor_id on public.analytics_visit_logs(visitor_id);
 create index if not exists idx_analytics_events_visitor_id on public.analytics_events(visitor_id);
 create index if not exists idx_analytics_events_created_at on public.analytics_events(created_at desc);
+create index if not exists idx_contact_inquiries_created_at on public.contact_inquiries(created_at desc);
+create index if not exists idx_contact_inquiries_visitor_id on public.contact_inquiries(visitor_id);
 
 -- Enable Row Level Security (RLS)
 alter table public.analytics_visitors enable row level security;
 alter table public.analytics_visit_logs enable row level security;
 alter table public.analytics_events enable row level security;
+alter table public.contact_inquiries enable row level security;
 
 -- Drop existing policies if any to prevent duplication conflicts
 drop policy if exists "Allow Public Track Visitors Insert" on public.analytics_visitors;
@@ -75,7 +94,10 @@ drop policy if exists "Allow Public Insert Events" on public.analytics_events;
 drop policy if exists "Allow Public Select Events" on public.analytics_events;
 drop policy if exists "Allow Authenticated Full Access Events" on public.analytics_events;
 
--- Public Access Policies (For website tracking script)
+drop policy if exists "Allow Public Submit Inquiries" on public.contact_inquiries;
+drop policy if exists "Allow Authenticated Full Access Contact Inquiries" on public.contact_inquiries;
+
+-- Public Access Policies (For website tracking script and contact form)
 create policy "Allow Public Track Visitors Insert" on public.analytics_visitors for insert with check (true);
 create policy "Allow Public Track Visitors Update" on public.analytics_visitors for update using (true);
 create policy "Allow Public Track Visitors Select" on public.analytics_visitors for select using (true);
@@ -86,7 +108,11 @@ create policy "Allow Public Select Visit Logs" on public.analytics_visit_logs fo
 create policy "Allow Public Insert Events" on public.analytics_events for insert with check (true);
 create policy "Allow Public Select Events" on public.analytics_events for select using (true);
 
--- Authenticated Admin Access Policies (For Admin Analytics Dashboard)
+create policy "Allow Public Submit Inquiries" on public.contact_inquiries for insert with check (true);
+
+-- Authenticated Admin Access Policies (For Admin Analytics Dashboard & Inbox)
 create policy "Allow Authenticated Full Access Visitors" on public.analytics_visitors for all using (auth.role() = 'authenticated');
 create policy "Allow Authenticated Full Access Visit Logs" on public.analytics_visit_logs for all using (auth.role() = 'authenticated');
 create policy "Allow Authenticated Full Access Events" on public.analytics_events for all using (auth.role() = 'authenticated');
+create policy "Allow Authenticated Full Access Contact Inquiries" on public.contact_inquiries for all using (auth.role() = 'authenticated');
+

@@ -100,6 +100,8 @@ export default function Contact() {
       message: formData.message,
     };
 
+    const visitorId = typeof window !== "undefined" ? localStorage.getItem("fsv_visitor_id") : null;
+
     Promise.all([
       // 1. Send inquiry email to FS Visuals
       emailjs.send(
@@ -130,15 +132,34 @@ export default function Contact() {
           eventType: "N/A",
           details: formData.message
         }),
-      })
+      }),
+      // 4. Save to Supabase contact_inquiries & sync lead in Admin Analytics
+      fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          date: formData.date,
+          message: formData.message,
+          visitorId,
+        }),
+      }).catch(() => {})
     ])
     .then(() => {
       setSubmitted(true);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("fsv_visitor_name", formData.name);
+          localStorage.setItem("fsv_human_verified", "true");
+        }
+      } catch {}
       setFormData({ name: "", email: "", phone: "", date: "", message: "" });
       setSubmitting(false);
     })
     .catch((err) => {
-      console.error("EmailJS Error:", err);
+      console.error("Submission Error:", err);
       setError("Failed to send message. Please try again or contact us directly via WhatsApp.");
       setSubmitting(false);
     });

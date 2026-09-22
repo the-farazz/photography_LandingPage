@@ -4,6 +4,7 @@ import "lenis/dist/lenis.css";
 import LenisProvider from "@/components/LenisProvider";
 import { JsonLd } from "@/components/JsonLd";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import WelcomeModal from "@/components/WelcomeModal";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -181,6 +182,7 @@ export default function RootLayout({ children }) {
       >
         <JsonLd data={jsonLd} />
         <AnalyticsTracker />
+        <WelcomeModal />
         {/* Subtle Film Grain Overlay across all pages */}
         <div className="film-grain" />
         <LenisProvider>

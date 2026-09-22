@@ -272,7 +272,7 @@ export default function AdminAnalyticsPage() {
     }
 
     try {
-      const [visitorsRes, logsRes, eventsRes] = await Promise.all([
+      const [visitorsRes, logsRes, eventsRes, contactsRes] = await Promise.all([
         supabase
           .from("analytics_visitors")
           .select("*")
@@ -287,6 +287,10 @@ export default function AdminAnalyticsPage() {
           .select("visitor_id, event_name, event_data, created_at")
           .order("created_at", { ascending: false })
           .limit(1000),
+        supabase
+          .from("contact_inquiries")
+          .select("visitor_id, name, email, phone, created_at")
+          .not("visitor_id", "is", null),
       ]);
 
       if (visitorsRes.data) {
@@ -297,21 +301,36 @@ export default function AdminAnalyticsPage() {
         setLogs(logsRes.data);
       }
 
-      // Check if any visitors performed inquiry actions in events
-      if (eventsRes.data) {
-        const mapping = {};
+      const mapping = {};
+      // 1. Priority 1 (HIGHEST): Real submitted contact inquiry leads
+      if (contactsRes?.data) {
+        contactsRes.data.forEach((c) => {
+          if (c.visitor_id) {
+            mapping[c.visitor_id] = {
+              name: c.name,
+              email: c.email || "",
+              phone: c.phone || "",
+            };
+          }
+        });
+      }
+
+      // 2. Priority 2: Inquiries captured via analytics events
+      if (eventsRes?.data) {
         eventsRes.data.forEach((e) => {
           if (e.event_name === "contact_submit" || e.event_name === "cta_click") {
-            if (e.event_data?.name && e.visitor_id) {
+            if (e.event_data?.name && e.visitor_id && !mapping[e.visitor_id]) {
               mapping[e.visitor_id] = {
                 name: e.event_data.name,
                 email: e.event_data.email || "",
+                phone: e.event_data.phone || "",
               };
             }
           }
         });
-        setLeadsMap(mapping);
       }
+
+      setLeadsMap(mapping);
     } catch (err) {
       console.error("Failed to load telemetry analytics", err);
     } finally {

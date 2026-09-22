@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   FileText,
   Activity,
+  Inbox,
   LogOut,
   ExternalLink,
   Menu,
@@ -101,6 +102,13 @@ export default function AdminLayout({ children }) {
       icon: FileText,
       badge: "Tool",
       isActive: pathname === "/admin",
+    },
+    {
+      label: "Client Inquiries",
+      href: "/admin/inbox",
+      icon: Inbox,
+      badge: "Leads",
+      isActive: pathname === "/admin/inbox",
     },
     {
       label: "Visitor Telemetry",
