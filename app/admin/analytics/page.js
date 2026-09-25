@@ -147,7 +147,6 @@ export default function AdminAnalyticsPage() {
   const [visitors, setVisitors] = useState([]);
   const [logs, setLogs] = useState([]);
   const [leadsMap, setLeadsMap] = useState({});
-  const [humanVerifiedIds, setHumanVerifiedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -211,13 +210,9 @@ export default function AdminAnalyticsPage() {
     }
 
     // A genuine human client has at least ONE behavioral proof signal:
-    // - Fired a human_verified event (scroll >30px / mouse move / 3s dwell / click / keyboard)
     // - Re-visited the portfolio (visitCount > 1)
     // - Stayed on the site and read content (timeSpanSec >= 3)
-    const hasHumanBehavior =
-      humanVerifiedIds.has(v.visitor_id) || // Client-side behavioral proof
-      visitCount > 1 ||                     // Repeat visitor
-      timeSpanSec >= 3;                     // Dwell time >= 3s
+    const hasHumanBehavior = visitCount > 1 || timeSpanSec >= 3;
 
     if (hasHumanBehavior) {
       return false; // Confirmed Real Human Visitor
@@ -336,18 +331,6 @@ export default function AdminAnalyticsPage() {
       }
 
       setLeadsMap(mapping);
-
-      // Build a Set of visitor_ids that fired a human_verified event
-      // (scroll >30px, mouse move, 3s dwell, click, keyboard — any one of these)
-      const verifiedSet = new Set();
-      if (eventsRes?.data) {
-        eventsRes.data.forEach((e) => {
-          if (e.event_name === "human_verified" && e.visitor_id) {
-            verifiedSet.add(e.visitor_id);
-          }
-        });
-      }
-      setHumanVerifiedIds(verifiedSet);
     } catch (err) {
       console.error("Failed to load telemetry analytics", err);
     } finally {

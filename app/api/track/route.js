@@ -166,11 +166,10 @@ export async function POST(req) {
     const referrer = body.referrer || req.headers.get("referer") || "Direct";
 
     // Detect Bot / Real Human
-    let { isBot, botType } = detectBotType(userAgent, city, country, os, body.isWebDriver);
-    if (body.isHumanVerified === true) {
-      isBot = false;
-      botType = null;
-    }
+    // NOTE: isHumanVerified intentionally NOT used to override server detection.
+    // Headless Chrome bots execute JS and fire scroll/dwell events — client signals
+    // cannot be trusted to clear a confirmed server-side bot flag.
+    const { isBot, botType } = detectBotType(userAgent, city, country, os, body.isWebDriver);
 
     // 1. Check if visitor already exists
     const { data: existingVisitor } = await supabase
