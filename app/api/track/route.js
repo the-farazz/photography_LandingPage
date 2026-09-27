@@ -26,15 +26,63 @@ function getDeviceInfo(userAgent) {
   return { device, os, browser };
 }
 
-function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver = false) {
+function detectBotType(userAgentOrOptions, cityArg = "", countryArg = "", osArg = "", isWebDriverArg = false, ipArg = "", referrerArg = "") {
+  let userAgent = "";
+  let city = "";
+  let country = "";
+  let os = "";
+  let isWebDriver = false;
+  let ip = "";
+  let referrer = "";
+
+  if (typeof userAgentOrOptions === "object" && userAgentOrOptions !== null) {
+    userAgent = userAgentOrOptions.userAgent || "";
+    city = userAgentOrOptions.city || "";
+    country = userAgentOrOptions.country || "";
+    os = userAgentOrOptions.os || "";
+    isWebDriver = Boolean(userAgentOrOptions.isWebDriver);
+    ip = userAgentOrOptions.ip || "";
+    referrer = userAgentOrOptions.referrer || "";
+  } else {
+    userAgent = userAgentOrOptions || "";
+    city = cityArg || "";
+    country = countryArg || "";
+    os = osArg || "";
+    isWebDriver = Boolean(isWebDriverArg);
+    ip = ipArg || "";
+    referrer = referrerArg || "";
+  }
+
   if (isWebDriver === true) {
     return { isBot: true, botType: "Automated Webdriver / Script" };
   }
 
   const ua = (userAgent || "").toLowerCase();
+  const cCountry = (country || "").toUpperCase().trim();
+  const cCity = decodeURIComponent(city || "").toLowerCase().trim();
+  const cIp = (ip || "").trim();
+  const cRef = (referrer || "").toLowerCase().trim();
 
-  // 1. AI Search & LLM Crawlers
-  if (ua.includes("gptbot") || ua.includes("chatgpt-user") || ua.includes("oai-searchbot")) {
+  // 1. Localhost / Dev testing pings
+  if (cIp === "::1" || cIp === "127.0.0.1" || cIp.startsWith("192.168.") || (cCity === "amsterdam" && cIp === "::1")) {
+    return { isBot: true, botType: "Localhost / Developer Ping" };
+  }
+
+  // 2. IP-based crawler detection (Googlebot, Meta, AWS, etc.)
+  if (cIp.startsWith("66.249.")) {
+    return { isBot: true, botType: "Googlebot Mobile / Search Indexer" };
+  }
+  if (cIp.startsWith("173.252.") || cIp.startsWith("31.13.") || cIp.startsWith("157.240.")) {
+    return { isBot: true, botType: "Meta / Facebook Crawler" };
+  }
+  if (cIp.startsWith("54.") || cIp.startsWith("52.") || cIp.startsWith("34.") || cIp.startsWith("35.") || cIp.startsWith("13.")) {
+    if (cCountry === "US" || cCountry === "UNITED STATES" || cCity.includes("ashburn") || cCity.includes("san jose")) {
+      return { isBot: true, botType: "AWS Cloud Datacenter Bot" };
+    }
+  }
+
+  // 3. AI Search & LLM Crawlers
+  if (ua.includes("gptbot") || ua.includes("chatgpt-user") || ua.includes("oai-searchbot") || ua.includes("chatgpt")) {
     return { isBot: true, botType: "OpenAI ChatGPT Crawler" };
   }
   if (ua.includes("perplexitybot")) {
@@ -53,7 +101,7 @@ function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver 
     return { isBot: true, botType: "Cohere AI Bot" };
   }
 
-  // 2. Search Engine Crawlers
+  // 4. Search Engine Crawlers
   if (ua.includes("googlebot")) {
     return { isBot: true, botType: "Googlebot Search Indexer" };
   }
@@ -67,7 +115,7 @@ function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver 
     return { isBot: true, botType: "Search Engine Crawler" };
   }
 
-  // 3. Social Media Link Preview Bots
+  // 5. Social Media Link Preview Bots
   if (
     ua.includes("whatsapp") ||
     ua.includes("facebookexternalhit") ||
@@ -81,19 +129,18 @@ function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver 
     return { isBot: true, botType: "Social Link Preview Bot" };
   }
 
-  // 4. Cloud & Health Check Pingers
+  // 6. Cloud & Health Check Pingers
   if (
     ua.includes("vercel") ||
     ua.includes("headlesschrome") ||
     ua.includes("lighthouse") ||
     ua.includes("puppeteer") ||
-    ua.includes("playwright") ||
-    (os === "Linux" && (city.toLowerCase().includes("san jose") || country === "US") && !ua.includes("android"))
+    ua.includes("playwright")
   ) {
     return { isBot: true, botType: "Cloud / System Health Check" };
   }
 
-  // 5. Generic Scrapers
+  // 7. Generic Scrapers
   if (
     ua.includes("bot") ||
     ua.includes("crawler") ||
@@ -101,9 +148,43 @@ function detectBotType(userAgent, city = "", country = "", os = "", isWebDriver 
     ua.includes("curl") ||
     ua.includes("wget") ||
     ua.includes("python-requests") ||
+    ua.includes("aiohttp") ||
     ua.includes("scrapy")
   ) {
     return { isBot: true, botType: "Automated Web Bot" };
+  }
+
+  // 8. Known Cloud Datacenter Hubs
+  const isDatacenterCity =
+    cCity.includes("ashburn") ||
+    cCity.includes("san jose") ||
+    cCity.includes("san%20jose") ||
+    cCity.includes("new albany") ||
+    cCity.includes("new%20albany") ||
+    cCity.includes("boardman") ||
+    cCity.includes("council bluffs") ||
+    cCity.includes("dresden") ||
+    cCity.includes("dortmund") ||
+    cCity.includes("frankfurt") ||
+    cCity.includes("falkenstein") ||
+    cCity.includes("nuremberg") ||
+    cCity.includes("nuernberg");
+
+  if (isDatacenterCity) {
+    return { isBot: true, botType: "Cloud Datacenter Bot (" + (city || "Datacenter") + ")" };
+  }
+
+  // 9. Foreign Cloud/Crawler Traffic for Pakistan Photography Business
+  if (cCountry === "DE" || cCountry === "GERMANY") {
+    return { isBot: true, botType: "German Datacenter Crawler (" + (city || "DE") + ")" };
+  }
+
+  if (cCountry === "NL" || cCountry === "THE NETHERLANDS") {
+    return { isBot: true, botType: "Cloud Datacenter Bot (NL)" };
+  }
+
+  if (cCountry === "US" || cCountry === "UNITED STATES") {
+    return { isBot: true, botType: "US Cloud Health Check / Crawler" };
   }
 
   return { isBot: false, botType: null };
@@ -169,7 +250,15 @@ export async function POST(req) {
     // NOTE: isHumanVerified intentionally NOT used to override server detection.
     // Headless Chrome bots execute JS and fire scroll/dwell events — client signals
     // cannot be trusted to clear a confirmed server-side bot flag.
-    const { isBot, botType } = detectBotType(userAgent, city, country, os, body.isWebDriver);
+    const { isBot, botType } = detectBotType({
+      userAgent,
+      city,
+      country,
+      os,
+      isWebDriver: body.isWebDriver,
+      ip,
+      referrer,
+    });
 
     // 1. Check if visitor already exists
     const { data: existingVisitor } = await supabase

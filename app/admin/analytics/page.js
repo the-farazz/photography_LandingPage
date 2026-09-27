@@ -187,7 +187,7 @@ export default function AdminAnalyticsPage() {
     return clean;
   };
 
-  // Helper to determine if a record is bot/system check (100% Pure Behavioral Telemetry)
+  // Helper to determine if a record is bot/system check
   const isBotRecord = (v) => {
     // 1. If visitor has a captured name or submitted an inquiry lead -> 100% genuine lead
     const isLead = Boolean(leadsMap[v.visitor_id]);
@@ -196,7 +196,47 @@ export default function AdminAnalyticsPage() {
     // 2. Explicit bot flag from server/crawler detection or webdriver automation
     if (v.is_bot) return true;
 
-    // 3. Pure Behavioral Telemetry Checks (Zero City/Country/OS Biases):
+    const country = (v.country || "").toUpperCase().trim();
+    const city = decodeURIComponent(v.city || "").toLowerCase().trim();
+    const ip = (v.ip || "").trim();
+
+    // 3. Localhost / Dev testing
+    if (ip === "::1" || ip === "127.0.0.1" || (country.includes("NETHERLANDS") && ip === "::1")) {
+      return true;
+    }
+
+    // 4. IP-based crawler detection (Googlebot, Meta, AWS)
+    if (ip.startsWith("66.249.") || ip.startsWith("173.252.")) {
+      return true;
+    }
+    if (ip.startsWith("54.") || ip.startsWith("52.") || ip.startsWith("34.") || ip.startsWith("35.") || ip.startsWith("13.")) {
+      if (country === "US" || country === "UNITED STATES" || city.includes("ashburn") || city.includes("san jose")) {
+        return true;
+      }
+    }
+
+    // 5. Cloud Datacenter Hubs (Ashburn, San Jose, New Albany, Dresden, Dortmund, Frankfurt, Falkenstein, etc.)
+    const isDatacenterCity =
+      city.includes("ashburn") ||
+      city.includes("san jose") ||
+      city.includes("san%20jose") ||
+      city.includes("new albany") ||
+      city.includes("new%20albany") ||
+      city.includes("boardman") ||
+      city.includes("council bluffs") ||
+      city.includes("dresden") ||
+      city.includes("dortmund") ||
+      city.includes("frankfurt") ||
+      city.includes("falkenstein") ||
+      city.includes("nuremberg") ||
+      city.includes("nuernberg");
+
+    if (isDatacenterCity) {
+      return true;
+    }
+
+
+    // 7. Pure Behavioral Telemetry Checks (for regional visitors):
     const visitCount = typeof v.visit_count === "number" ? v.visit_count : 1;
 
     // Calculate actual dwell time span
@@ -224,6 +264,19 @@ export default function AdminAnalyticsPage() {
 
   const getBotLabel = (v) => {
     if (v.bot_type) return v.bot_type;
+    const country = (v.country || "").toUpperCase().trim();
+    const city = decodeURIComponent(v.city || "").trim();
+    const ip = (v.ip || "").trim();
+
+    if (ip === "::1" || ip === "127.0.0.1") return "Localhost / Developer Ping";
+    if (ip.startsWith("66.249.")) return "Googlebot Mobile / Search Indexer";
+    if (ip.startsWith("173.252.")) return "Meta / Facebook Crawler";
+    if (city.toLowerCase().includes("ashburn") || (ip.startsWith("54.") && country === "US")) return "AWS Cloud Datacenter Bot (Ashburn)";
+    if (country === "DE" || country === "GERMANY" || city.toLowerCase().includes("dresden") || city.toLowerCase().includes("dortmund")) {
+      return `German Datacenter Crawler (${city || "DE"})`;
+    }
+    if (country === "US" || country === "UNITED STATES") return `US Cloud / System Ping (${city || "US"})`;
+    if (country === "NL" || country === "THE NETHERLANDS") return "Cloud Datacenter Bot (NL)";
     return "Automated Instant Ping (<1s)";
   };
 
