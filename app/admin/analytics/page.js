@@ -251,8 +251,8 @@ export default function AdminAnalyticsPage() {
 
     // A genuine human client has at least ONE behavioral proof signal:
     // - Re-visited the portfolio (visitCount > 1)
-    // - Stayed on the site and read content (timeSpanSec >= 3)
-    const hasHumanBehavior = visitCount > 1 || timeSpanSec >= 3;
+    // - Stayed on the site and genuinely explored (timeSpanSec >= 8)
+    const hasHumanBehavior = visitCount > 1 || timeSpanSec >= 8;
 
     if (hasHumanBehavior) {
       return false; // Confirmed Real Human Visitor

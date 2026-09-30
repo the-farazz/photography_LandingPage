@@ -136,12 +136,12 @@ export default function AnalyticsTracker() {
       }
     };
 
-    // 2. Dwell Time Timer (>= 3s on page)
+    // 2. Dwell Time Timer (>= 8s on page - GA4 Engagement Standard)
     const dwellTimer = setTimeout(() => {
       if (document.visibilityState === "visible") {
-        verifyHuman("active_dwell_time_3s");
+        verifyHuman("active_dwell_time_8s");
       }
-    }, 3000);
+    }, 8000);
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("pointerdown", handlePointerOrTouch, { passive: true });

@@ -174,17 +174,16 @@ function detectBotType(userAgentOrOptions, cityArg = "", countryArg = "", osArg 
     return { isBot: true, botType: "Cloud Datacenter Bot (" + (city || "Datacenter") + ")" };
   }
 
-  // 9. Foreign Cloud/Crawler Traffic for Pakistan Photography Business
-  if (cCountry === "DE" || cCountry === "GERMANY") {
-    return { isBot: true, botType: "German Datacenter Crawler (" + (city || "DE") + ")" };
-  }
-
-  if (cCountry === "NL" || cCountry === "THE NETHERLANDS") {
-    return { isBot: true, botType: "Cloud Datacenter Bot (NL)" };
-  }
-
-  if (cCountry === "US" || cCountry === "UNITED STATES") {
-    return { isBot: true, botType: "US Cloud Health Check / Crawler" };
+  // 9. Cloud Server Farms & Automated Headless Clusters (AWS Boardman, San Jose, Ashburn, Council Bluffs, The Dalles)
+  if (
+    cCity.includes("boardman") ||
+    cCity.includes("council bluffs") ||
+    cCity.includes("the dalles") ||
+    cCity.includes("sewanee") ||
+    cCity.includes("santa clara") ||
+    (os === "Linux" && (cCity.includes("san jose") || cCity.includes("ashburn")))
+  ) {
+    return { isBot: true, botType: "Cloud Server / Data Center Ping" };
   }
 
   return { isBot: false, botType: null };
