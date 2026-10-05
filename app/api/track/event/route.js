@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req) {
   try {
+    const rateLimit = applyRateLimit(req, "track_event", 120, 60 * 1000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded for event tracking." },
+        { status: 429, headers: rateLimit.headers }
+      );
+    }
+
     let supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/^["']|["']$/g, "");
     let supabaseKey = (
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -60,7 +69,7 @@ export async function POST(req) {
       })
       .eq("visitor_id", visitorId);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: rateLimit.headers });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

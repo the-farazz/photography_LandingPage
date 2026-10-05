@@ -1,8 +1,38 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { applyRateLimit, getClientIp } from "@/lib/rateLimit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(req) {
   try {
+    // 1. Rate Limiting Check (Max 5 submissions per 10 minutes per IP)
+    const rateLimit = applyRateLimit(req, "contact", 5, 10 * 60 * 1000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many contact inquiries submitted. Please wait a few minutes before trying again.",
+        },
+        {
+          status: 429,
+          headers: rateLimit.headers,
+        }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { name, email, phone, date, message, visitorId, turnstileToken } = body;
+
+    // 2. Cloudflare Turnstile Verification Check
+    const clientIp = getClientIp(req);
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp);
+    if (!turnstileCheck.success) {
+      return NextResponse.json(
+        { success: false, error: turnstileCheck.error || "Security verification failed." },
+        { status: 400, headers: rateLimit.headers }
+      );
+    }
+
     let supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/^["']|["']$/g, "");
     let supabaseKey = (
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -24,14 +54,11 @@ export async function POST(req) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const body = await req.json().catch(() => ({}));
-
-    const { name, email, phone, date, message, visitorId } = body;
 
     if (!name || !email) {
       return NextResponse.json(
         { success: false, error: "Please provide your name and email." },
-        { status: 400 }
+        { status: 400, headers: rateLimit.headers }
       );
     }
 
@@ -102,10 +129,13 @@ export async function POST(req) {
         .eq("visitor_id", cleanVisitorId);
     } catch (e) {}
 
-    return NextResponse.json({
-      success: true,
-      message: "Inquiry successfully received and saved.",
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Inquiry successfully received and saved.",
+      },
+      { headers: rateLimit.headers }
+    );
   } catch (err) {
     console.error("Contact API error:", err);
     return NextResponse.json(

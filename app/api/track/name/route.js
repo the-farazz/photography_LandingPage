@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req) {
   try {
+    const rateLimit = applyRateLimit(req, "track_name", 30, 60 * 1000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded for name update." },
+        { status: 429, headers: rateLimit.headers }
+      );
+    }
+
     let supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/^["']|["']$/g, "");
     let supabaseKey = (
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -30,7 +39,7 @@ export async function POST(req) {
     if (!visitorId || !name || !name.trim()) {
       return NextResponse.json(
         { success: false, error: "Missing visitor ID or name." },
-        { status: 400 }
+        { status: 400, headers: rateLimit.headers }
       );
     }
 
@@ -63,7 +72,10 @@ export async function POST(req) {
       ]);
     } catch {}
 
-    return NextResponse.json({ success: true, visitorId, name: cleanName });
+    return NextResponse.json(
+      { success: true, visitorId, name: cleanName },
+      { headers: rateLimit.headers }
+    );
   } catch (err) {
     console.error("Visitor name update error:", err);
     return NextResponse.json(

@@ -4,6 +4,7 @@ import { Mail, MapPin, Instagram, Facebook, MessageSquare, Send, CheckCircle2 } 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import emailjs from "@emailjs/browser";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const TiktokIcon = (props) => (
   <svg
@@ -41,6 +42,7 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [turnstileToken, setTurnstileToken] = useState(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -87,54 +89,16 @@ export default function Contact() {
     return () => window.removeEventListener('packageSelected', handlePackageSelect);
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    const templateParams = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      date: formData.date,
-      message: formData.message,
-    };
-
     const visitorId = typeof window !== "undefined" ? localStorage.getItem("fsv_visitor_id") : null;
 
-    Promise.all([
-      // 1. Send inquiry email to FS Visuals
-      emailjs.send(
-        "service_xb8umvo",
-        "template_ea7olvg",
-        templateParams,
-        "_iB-PeMQ35Yb5DPCX"
-      ),
-      // 2. Send auto-reply thank-you email to the customer
-      emailjs.send(
-        "service_xb8umvo",
-        "template_50n78ud",
-        templateParams,
-        "_iB-PeMQ35Yb5DPCX"
-      ),
-      // 3. Save to Google Sheets
-      fetch("https://script.google.com/macros/s/AKfycbz3Bg5O8sravH0SQ6duYJY1T6rus3u-KVFS2VkY6X_SokMlAv-vRkJWT8Rd5ynVIQWuiA/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          date: formData.date,
-          eventType: "N/A",
-          details: formData.message
-        }),
-      }),
-      // 4. Save to Supabase contact_inquiries & sync lead in Admin Analytics
-      fetch("/api/contact", {
+    try {
+      // 1. Save to Supabase contact_inquiries with Rate Limiting & Turnstile verification
+      const contactRes = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,10 +108,57 @@ export default function Contact() {
           date: formData.date,
           message: formData.message,
           visitorId,
+          turnstileToken,
         }),
-      }).catch(() => {})
-    ])
-    .then(() => {
+      });
+
+      const contactData = await contactRes.json();
+      if (!contactRes.ok || !contactData.success) {
+        throw new Error(contactData.error || "Verification failed. Please try again.");
+      }
+
+      const templateParams = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        date: formData.date,
+        message: formData.message,
+      };
+
+      // 2. Fire optional notifications & sync sheets
+      await Promise.all([
+        // Send inquiry email to FS Visuals
+        emailjs.send(
+          "service_xb8umvo",
+          "template_ea7olvg",
+          templateParams,
+          "_iB-PeMQ35Yb5DPCX"
+        ).catch(() => {}),
+        // Send auto-reply thank-you email to customer
+        emailjs.send(
+          "service_xb8umvo",
+          "template_50n78ud",
+          templateParams,
+          "_iB-PeMQ35Yb5DPCX"
+        ).catch(() => {}),
+        // Save to Google Sheets
+        fetch("https://script.google.com/macros/s/AKfycbz3Bg5O8sravH0SQ6duYJY1T6rus3u-KVFS2VkY6X_SokMlAv-vRkJWT8Rd5ynVIQWuiA/exec", {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            date: formData.date,
+            eventType: "N/A",
+            details: formData.message
+          }),
+        }).catch(() => {}),
+      ]);
+
       setSubmitted(true);
       try {
         if (typeof window !== "undefined") {
@@ -156,13 +167,12 @@ export default function Contact() {
         }
       } catch {}
       setFormData({ name: "", email: "", phone: "", date: "", message: "" });
-      setSubmitting(false);
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error("Submission Error:", err);
-      setError("Failed to send message. Please try again or contact us directly via WhatsApp.");
+      setError(err.message || "Failed to send message. Please try again or contact us directly via WhatsApp.");
+    } finally {
       setSubmitting(false);
-    });
+    }
   };
 
   const handleChange = (e) => {
@@ -298,6 +308,17 @@ export default function Contact() {
                       onChange={handleChange}
                       className="bg-bg-secondary border border-white/10 px-4 py-3 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors duration-300 rounded-none resize-none"
                       placeholder="Share details about the venue, gathering size, custom requirements, and your vision..."
+                    />
+                  </div>
+
+                  {/* Cloudflare Turnstile Security Verification */}
+                  <div className="flex flex-col items-center justify-center my-2 py-1 overflow-hidden">
+                    <Turnstile
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      onExpire={() => setTurnstileToken(null)}
+                      onError={() => setTurnstileToken(null)}
+                      options={{ theme: "dark" }}
                     />
                   </div>
 
