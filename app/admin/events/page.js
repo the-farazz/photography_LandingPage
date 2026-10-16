@@ -1192,7 +1192,7 @@ export default function AdminEventsBudgetPage() {
                         </span>
                         {p.notes && (
                           <span className="text-[10px] text-text-muted/80 block italic">
-                            "{p.notes}"
+                            &ldquo;{p.notes}&rdquo;
                           </span>
                         )}
                       </div>
