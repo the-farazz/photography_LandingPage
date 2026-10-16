@@ -3,17 +3,17 @@ import React from "react";
 
 export default function InvoiceDocument({ data, id = "printable-invoice" }) {
   const {
-    clientName = "Ahsan",
+    clientName = "",
     clientId = "CLI-2026-089",
     invoiceNo = "INV-2026-0042",
     invoiceDate = "August 25, 2026",
     dueDate = "Upon Receipt",
-    serviceName = "Videography Services",
-    description = "On-location video production & coverage (4 Days)",
-    duration = "4 Days",
-    totalAmount = 23000,
-    paidAmount = 8000,
-    status = "PARTIALLY PAID",
+    serviceName = "Photography Services",
+    description = "High-resolution fine-art photography & candid coverage",
+    duration = "",
+    totalAmount = 20000,
+    paidAmount = 0,
+    status = "UNPAID",
     notes = "",
   } = data || {};
 
@@ -96,7 +96,7 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
               className="text-[15.5px] font-bold text-black leading-tight"
               style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}
             >
-              {clientName || "Client Name"}
+              {clientName && clientName.trim() ? clientName : "Client Name"}
             </h3>
             <p
               className="text-[12.5px] text-[#495057] font-normal mt-1"
@@ -189,7 +189,7 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
               className="col-span-2 text-center font-semibold text-[13px] text-black pt-0.5"
               style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
             >
-              {duration}
+              {duration && duration.trim() ? duration : "—"}
             </div>
             <div
               className="col-span-3 text-right font-bold text-[13.5px] text-black pt-0.5"

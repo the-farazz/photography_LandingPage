@@ -24,6 +24,7 @@ import {
   Activity,
   FileText,
   CalendarCheck,
+  ChevronDown,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
 import { createClient } from "@/lib/supabase/client";
@@ -54,7 +55,7 @@ export default function AdminInvoicePage() {
   // Multi-select services state (with Album)
   const [services, setServices] = useState({
     photography: true,
-    videography: true,
+    videography: false,
     drone: false,
     album: false,
   });
@@ -63,18 +64,18 @@ export default function AdminInvoicePage() {
   const [mobileTab, setMobileTab] = useState("editor");
 
   const [formData, setFormData] = useState({
-    clientName: "Ahsan",
+    clientName: "",
     clientId: "CLI-2026-089",
     invoiceNo: "INV-2026-0042",
-    rawDate: "2026-08-25",
-    invoiceDate: "August 25, 2026",
+    rawDate: "2026-10-16",
+    invoiceDate: "October 16, 2026",
     dueDate: "Upon Receipt",
-    serviceName: "Photography & Videography Services",
-    duration: "4 Days",
-    description: "Complete photography & cinematic video production (4 Days)",
-    totalAmount: 23000,
-    paidAmount: 8000,
-    status: "PARTIALLY PAID",
+    serviceName: "Photography Services",
+    duration: "",
+    description: "High-resolution fine-art photography & candid coverage",
+    totalAmount: 20000,
+    paidAmount: 0,
+    status: "UNPAID",
     notes: "",
   });
 
@@ -92,7 +93,8 @@ export default function AdminInvoicePage() {
 
   const computeServiceTitleAndDesc = (serviceState, duration) => {
     const { photography, videography, drone, album } = serviceState;
-    const durText = duration || "Event";
+    const durClean = duration && duration.trim() ? duration.trim() : "";
+    const durSuffix = durClean ? ` (${durClean})` : "";
 
     // Build Title
     const titleParts = [];
@@ -101,7 +103,7 @@ export default function AdminInvoicePage() {
     if (drone) titleParts.push("Drone");
     if (album) titleParts.push("Album");
 
-    let title = "Photography & Videography Services";
+    let title = "Photography Services";
     if (titleParts.length === 1) {
       title = `${titleParts[0]} Services`;
     } else if (titleParts.length === 2) {
@@ -111,37 +113,37 @@ export default function AdminInvoicePage() {
     }
 
     // Build Description
-    let desc = `Complete event coverage (${durText})`;
-    if (photography && videography && !drone && !album) {
-      desc = `Complete photography & cinematic video production (${durText})`;
+    let desc = `Complete event coverage${durSuffix}`;
+    if (photography && !videography && !drone && !album) {
+      desc = `High-resolution fine-art photography & candid coverage${durSuffix}`;
+    } else if (photography && videography && !drone && !album) {
+      desc = `Complete photography & cinematic video production${durSuffix}`;
     } else if (photography && videography && drone && !album) {
-      desc = `Complete photography, cinematic video production & aerial drone coverage (${durText})`;
+      desc = `Complete photography, cinematic video production & aerial drone coverage${durSuffix}`;
     } else if (photography && videography && !drone && album) {
-      desc = `Complete photography, cinematic video production & luxury photo album (${durText})`;
+      desc = `Complete photography, cinematic video production & luxury photo album${durSuffix}`;
     } else if (photography && videography && drone && album) {
-      desc = `Complete photography, cinematic video production, aerial drone & luxury photo album (${durText})`;
-    } else if (photography && !videography && !drone && !album) {
-      desc = `High-resolution fine-art photography & candid coverage (${durText})`;
+      desc = `Complete photography, cinematic video production, aerial drone & luxury photo album${durSuffix}`;
     } else if (photography && !videography && drone && !album) {
-      desc = `High-resolution fine-art photography & aerial drone coverage (${durText})`;
+      desc = `High-resolution fine-art photography & aerial drone coverage${durSuffix}`;
     } else if (photography && !videography && !drone && album) {
-      desc = `High-resolution fine-art photography & luxury printed photo album (${durText})`;
+      desc = `High-resolution fine-art photography & luxury printed photo album${durSuffix}`;
     } else if (photography && !videography && drone && album) {
-      desc = `Fine-art photography, aerial drone coverage & luxury printed photo album (${durText})`;
+      desc = `Fine-art photography, aerial drone coverage & luxury printed photo album${durSuffix}`;
     } else if (!photography && videography && !drone && !album) {
-      desc = `On-location video production & coverage (${durText})`;
+      desc = `On-location video production & cinematic coverage${durSuffix}`;
     } else if (!photography && videography && drone && !album) {
-      desc = `Cinematic video production & aerial drone coverage (${durText})`;
+      desc = `Cinematic video production & aerial drone coverage${durSuffix}`;
     } else if (!photography && videography && !drone && album) {
-      desc = `Cinematic video production & highlight photo album (${durText})`;
+      desc = `Cinematic video production & highlight photo album${durSuffix}`;
     } else if (!photography && videography && drone && album) {
-      desc = `Cinematic video production, aerial drone coverage & highlight photo album (${durText})`;
+      desc = `Cinematic video production, aerial drone coverage & highlight photo album${durSuffix}`;
     } else if (!photography && !videography && drone && !album) {
-      desc = `Aerial drone footage & venue cinematography (${durText})`;
+      desc = `Aerial drone footage & venue cinematography${durSuffix}`;
     } else if (!photography && !videography && drone && album) {
-      desc = `Aerial drone cinematography & custom printed photo album (${durText})`;
+      desc = `Aerial drone cinematography & custom printed photo album${durSuffix}`;
     } else if (!photography && !videography && !drone && album) {
-      desc = `Custom designed luxury handmade photo album (${durText})`;
+      desc = `Custom designed luxury handmade photo album${durSuffix}`;
     }
 
     return { title, desc };
@@ -153,64 +155,82 @@ export default function AdminInvoicePage() {
   const [syncingEvent, setSyncingEvent] = useState(false);
   const [syncedSuccess, setSyncedSuccess] = useState(false);
 
-  const handleSyncToEventTracker = async () => {
+  const handleSyncToEventTracker = async (silent = false) => {
+    // Only sync if client name or total amount is entered
+    const cName = (formData.clientName && formData.clientName.trim()) 
+      ? formData.clientName.trim() 
+      : (formData.invoiceNo ? `Client (${formData.invoiceNo})` : "");
+    if (!cName && Number(formData.totalAmount || 0) <= 0) return;
+
     try {
       setSyncingEvent(true);
-      await fetch("/api/admin/events", {
+      const totalNum = Number(formData.totalAmount || 0);
+      const paidNum = Number(formData.paidAmount || 0);
+      const remNum = Math.max(0, totalNum - paidNum);
+      const computedStatus = paidNum <= 0 ? "UNPAID" : remNum <= 0 ? "FULLY PAID" : "PARTIALLY PAID";
+
+      const payload = {
+        client_name: cName || "Client Booking",
+        client_phone: "",
+        event_title: formData.serviceName || "Photography Services",
+        event_date: formData.rawDate || new Date().toISOString().split("T")[0],
+        event_location: "Karachi, Pakistan",
+        service_type: formData.serviceName,
+        total_amount: totalNum,
+        paid_amount: paidNum,
+        remaining_amount: remNum,
+        status: computedStatus,
+        invoice_no: formData.invoiceNo,
+        notes: formData.description || formData.notes,
+      };
+
+      const res = await fetch("/api/admin/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_name: formData.clientName,
-          client_phone: "",
-          event_title: formData.serviceName || "Photography Coverage",
-          event_date: formData.rawDate || new Date().toISOString().split("T")[0],
-          event_location: "Karachi, Pakistan",
-          service_type: formData.serviceName,
-          total_amount: formData.totalAmount,
-          paid_amount: formData.paidAmount,
-          invoice_no: formData.invoiceNo,
-          notes: formData.description || formData.notes,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const resData = await res.json().catch(() => ({}));
+
+      // Immediately update local cache so /admin/events shows it instantly
       try {
         const local = localStorage.getItem("fsv_cached_events");
         const list = local ? JSON.parse(local) : [];
-        const newEvt = {
+        const cleanList = list.filter((e) => e.invoice_no !== formData.invoiceNo);
+        const savedEvt = resData?.event || {
           id: `evt_inv_${Date.now()}`,
-          client_name: formData.clientName,
-          client_phone: "",
-          event_title: formData.serviceName || "Photography Coverage",
-          event_date: formData.rawDate || new Date().toISOString().split("T")[0],
-          event_location: "Karachi, Pakistan",
-          service_type: formData.serviceName,
-          total_amount: Number(formData.totalAmount || 0),
-          paid_amount: Number(formData.paidAmount || 0),
-          remaining_amount: Math.max(0, Number(formData.totalAmount || 0) - Number(formData.paidAmount || 0)),
-          status: Number(formData.paidAmount || 0) >= Number(formData.totalAmount || 0) ? "FULLY PAID" : "PARTIALLY PAID",
-          invoice_no: formData.invoiceNo,
-          notes: formData.description || formData.notes,
-          event_payments: [
+          ...payload,
+          event_payments: paidNum > 0 ? [
             {
               id: `pay_inv_${Date.now()}`,
-              amount: Number(formData.paidAmount || 0),
-              payment_date: formData.rawDate || new Date().toISOString().split("T")[0],
+              amount: paidNum,
+              payment_date: payload.event_date,
               payment_method: "Cash / Advance",
               notes: "Initial Advance from Invoice",
             }
-          ]
+          ] : [],
         };
-        localStorage.setItem("fsv_cached_events", JSON.stringify([newEvt, ...list]));
+        localStorage.setItem("fsv_cached_events", JSON.stringify([savedEvt, ...cleanList]));
       } catch {}
 
       setSyncedSuccess(true);
-      setTimeout(() => setSyncedSuccess(false), 4000);
+      setTimeout(() => setSyncedSuccess(false), 3500);
     } catch (err) {
-      alert("Synced to Event Tracker!");
+      console.warn("Event budget auto-sync notice:", err);
     } finally {
       setSyncingEvent(false);
     }
   };
+
+  // Auto-sync debounced effect: Automatically records invoice in Event Tracker in background
+  useEffect(() => {
+    if (!formData.clientName && Number(formData.totalAmount || 0) <= 0) return;
+    const timer = setTimeout(() => {
+      handleSyncToEventTracker(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate]);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
@@ -230,12 +250,77 @@ export default function AdminInvoicePage() {
     }));
   };
 
-  const handleDurationChange = (newDuration) => {
-    const computed = computeServiceTitleAndDesc(services, newDuration);
+  const handleDurationChange = (rawVal) => {
+    let formatted = rawVal;
+    const trimmed = (rawVal || "").trim();
+
+    // If user enters pure digits:
+    // 1 -> "1 Day", 2 -> "2 Days", 3 -> "3 Days"
+    if (/^\d+$/.test(trimmed)) {
+      const num = parseInt(trimmed, 10);
+      formatted = num === 1 ? "1 Day" : `${num} Days`;
+    }
+
+    const computed = computeServiceTitleAndDesc(services, formatted);
     setFormData((prev) => ({
       ...prev,
-      duration: newDuration,
+      duration: formatted,
       description: computed.desc,
+    }));
+  };
+
+  const handleStatusChange = (newStatus) => {
+    let newPaid = formData.paidAmount;
+    if (newStatus === "UNPAID") {
+      newPaid = 0;
+    } else if (newStatus === "PAID") {
+      newPaid = formData.totalAmount;
+    } else if (newStatus === "PARTIALLY PAID") {
+      if (newPaid <= 0 || newPaid >= formData.totalAmount) {
+        newPaid = Math.round(formData.totalAmount / 2);
+      }
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      status: newStatus,
+      paidAmount: newPaid,
+    }));
+  };
+
+  const handleTotalAmountChange = (val) => {
+    const total = Math.max(0, Number(val) || 0);
+    let autoStatus = formData.status;
+    if (formData.paidAmount <= 0) {
+      autoStatus = "UNPAID";
+    } else if (formData.paidAmount >= total && total > 0) {
+      autoStatus = "PAID";
+    } else {
+      autoStatus = "PARTIALLY PAID";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      totalAmount: total,
+      status: autoStatus,
+    }));
+  };
+
+  const handlePaidAmountChange = (val) => {
+    const paid = Math.max(0, Number(val) || 0);
+    let autoStatus = formData.status;
+    if (paid <= 0) {
+      autoStatus = "UNPAID";
+    } else if (paid >= formData.totalAmount && formData.totalAmount > 0) {
+      autoStatus = "PAID";
+    } else {
+      autoStatus = "PARTIALLY PAID";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      paidAmount: paid,
+      status: autoStatus,
     }));
   };
 
@@ -252,23 +337,23 @@ export default function AdminInvoicePage() {
 
   const handleResetSample = () => {
     const now = new Date();
-    const defaultServices = { photography: true, videography: true, drone: false, album: false };
-    const computed = computeServiceTitleAndDesc(defaultServices, "4 Days");
+    const defaultServices = { photography: true, videography: false, drone: false, album: false };
+    const computed = computeServiceTitleAndDesc(defaultServices, "");
 
     setServices(defaultServices);
     setFormData({
-      clientName: "Ahsan",
+      clientName: "",
       clientId: generateRandomClientId(),
       invoiceNo: generateRandomInvoiceNo(),
       rawDate: now.toISOString().split("T")[0],
       invoiceDate: formatDateToLong(now),
       dueDate: "Upon Receipt",
       serviceName: computed.title,
-      duration: "4 Days",
+      duration: "",
       description: computed.desc,
-      totalAmount: 23000,
-      paidAmount: 8000,
-      status: "PARTIALLY PAID",
+      totalAmount: 20000,
+      paidAmount: 0,
+      status: "UNPAID",
       notes: "",
     });
   };
@@ -291,6 +376,8 @@ export default function AdminInvoicePage() {
 
     try {
       setDownloadingPdf(true);
+      // Automatically sync invoice details to Event Budget Tracker
+      handleSyncToEventTracker(true);
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -360,6 +447,8 @@ export default function AdminInvoicePage() {
 
     try {
       setDownloadingPng(true);
+      // Automatically sync invoice details to Event Budget Tracker
+      handleSyncToEventTracker(true);
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -411,6 +500,8 @@ _“Aap ki yaadon ka cinematic safar.”_
 FS Visuals Karachi | +92 327 3129464`;
 
     navigator.clipboard.writeText(summaryText);
+    // Automatically sync invoice details to Event Budget Tracker
+    handleSyncToEventTracker(true);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -451,10 +542,19 @@ FS Visuals Karachi | +92 327 3129464`;
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* View Events Budget Link */}
+            <Link
+              href="/admin/events"
+              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-xs font-semibold bg-accent-gold/10 border border-accent-gold/30 text-accent-gold hover:bg-accent-gold/20 transition-all uppercase tracking-wider rounded-xl cursor-pointer"
+              title="Open Events Budget & Payments Tracker"
+            >
+              <CalendarCheck className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Event Budget</span>
+            </Link>
             {/* WhatsApp Text */}
             <button
               onClick={handleCopyWhatsAppSummary}
-              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors uppercase tracking-wider rounded-none"
+              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors uppercase tracking-wider rounded-xl"
               title="Copy WhatsApp text"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -465,7 +565,7 @@ FS Visuals Karachi | +92 327 3129464`;
             <button
               onClick={handleDownloadPNG}
               disabled={downloadingPng || downloadingPdf}
-              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-[#1b1b1b] border border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold transition-all uppercase tracking-wider disabled:opacity-50 rounded-none"
+              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-[#161616] border border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold transition-all uppercase tracking-wider disabled:opacity-50 rounded-xl"
               title="Download Invoice as Image"
             >
               {downloadingPng ? (
@@ -480,7 +580,7 @@ FS Visuals Karachi | +92 327 3129464`;
             <button
               onClick={handleDownloadPDF}
               disabled={downloadingPdf || downloadingPng}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-bold bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50 whitespace-nowrap rounded-none font-extrabold"
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-bold bg-accent-gold text-bg-primary hover:bg-accent-warm transition-all uppercase tracking-wider shadow-md shadow-accent-gold/10 disabled:opacity-50 whitespace-nowrap rounded-xl font-extrabold"
             >
               {downloadingPdf ? (
                 <>
@@ -534,7 +634,7 @@ FS Visuals Karachi | +92 327 3129464`;
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Column: Form Controls (Shown on desktop OR when mobileTab === 'editor') */}
         <div
-          className={`lg:col-span-5 bg-[#121212] border border-white/10 p-4 sm:p-6 lg:p-8 space-y-6 shadow-xl ${
+          className={`lg:col-span-5 bg-[#121212] border border-white/10 p-5 sm:p-7 rounded-2xl space-y-6 shadow-xl ${
             mobileTab === "editor" ? "block" : "hidden lg:block"
           }`}
         >
@@ -563,8 +663,8 @@ FS Visuals Karachi | +92 327 3129464`;
             </span>
 
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">
-                Client Name *
+              <label className="block text-xs font-medium text-text-muted mb-1.5">
+                Client Name <span className="text-text-muted/60">(Optional on draft)</span>
               </label>
               <input
                 type="text"
@@ -572,8 +672,8 @@ FS Visuals Karachi | +92 327 3129464`;
                 onChange={(e) =>
                   setFormData({ ...formData, clientName: e.target.value })
                 }
-                placeholder="e.g. Ahsan"
-                className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none transition-colors"
+                placeholder="Enter client name (e.g. Farhan & Ayesha)"
+                className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:ring-1 focus:ring-accent-gold/20 focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -586,37 +686,50 @@ FS Visuals Karachi | +92 327 3129464`;
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Invoice Date *
                 </label>
                 <input
                   type="date"
                   value={formData.rawDate}
                   onChange={handleDateChange}
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none"
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Payment Status
                 </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none cursor-pointer"
-                >
-                  <option value="PARTIALLY PAID">PARTIALLY PAID</option>
-                  <option value="PAID">PAID</option>
-                  <option value="UNPAID">UNPAID / DUE</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={formData.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className={`w-full bg-[#161616] border rounded-xl px-4 py-2.5 text-xs appearance-none focus:border-accent-gold/50 focus:ring-1 focus:ring-accent-gold/20 focus:outline-none cursor-pointer pr-10 font-bold transition-all ${
+                      formData.status === "UNPAID"
+                        ? "border-rose-500/40 text-rose-300"
+                        : formData.status === "PAID"
+                        ? "border-emerald-500/40 text-emerald-300"
+                        : "border-amber-500/40 text-amber-300"
+                    }`}
+                  >
+                    <option value="UNPAID" className="bg-[#181818] text-rose-300 font-semibold">
+                      UNPAID / DUE
+                    </option>
+                    <option value="PARTIALLY PAID" className="bg-[#181818] text-amber-300 font-semibold">
+                      PARTIALLY PAID
+                    </option>
+                    <option value="PAID" className="bg-[#181818] text-emerald-300 font-semibold">
+                      PAID IN FULL
+                    </option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-text-muted absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">
+              <label className="block text-xs font-medium text-text-muted mb-1.5">
                 Due Date
               </label>
               <input
@@ -626,7 +739,7 @@ FS Visuals Karachi | +92 327 3129464`;
                   setFormData({ ...formData, dueDate: e.target.value })
                 }
                 placeholder="Upon Receipt"
-                className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none"
+                className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -647,10 +760,10 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("photography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
                   services.photography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
                 <Camera className="w-3.5 h-3.5 shrink-0" />
@@ -660,10 +773,10 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("videography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
                   services.videography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
                 <Film className="w-3.5 h-3.5 shrink-0" />
@@ -673,10 +786,10 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("drone")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
                   services.drone
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
                 <Compass className="w-3.5 h-3.5 shrink-0" />
@@ -686,10 +799,10 @@ FS Visuals Karachi | +92 327 3129464`;
               <button
                 type="button"
                 onClick={() => handleToggleService("album")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-none ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
                   services.album
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#1b1b1b] border-white/10 text-text-muted hover:border-white/30"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5 shrink-0" />
@@ -698,7 +811,7 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">
+              <label className="block text-xs font-medium text-text-muted mb-1.5">
                 Service Title
               </label>
               <input
@@ -707,27 +820,56 @@ FS Visuals Karachi | +92 327 3129464`;
                 onChange={(e) =>
                   setFormData({ ...formData, serviceName: e.target.value })
                 }
-                placeholder="e.g. Photography & Videography Services"
-                className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none"
+                placeholder="e.g. Photography Services"
+                className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-medium text-text-muted mb-1">
-                  Duration
-                </label>
+              {/* Duration with Smart Format and Quick Pills */}
+              <div className="sm:col-span-1 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-text-muted">
+                    Duration
+                  </label>
+                  {formData.duration && (
+                    <button
+                      type="button"
+                      onClick={() => handleDurationChange("")}
+                      className="text-[10px] text-text-muted hover:text-rose-400 cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.duration}
                   onChange={(e) => handleDurationChange(e.target.value)}
-                  placeholder="e.g. 4 Days"
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none"
+                  placeholder="Empty or type 1, 2..."
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
                 />
+                {/* Quick Presets: 1 Day, 2 Days, 3 Days */}
+                <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+                  {["1 Day", "2 Days", "3 Days", "4 Days"].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => handleDurationChange(dur)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                        formData.duration === dur
+                          ? "bg-accent-gold/20 border-accent-gold text-accent-gold font-bold"
+                          : "bg-white/5 border-white/10 text-text-muted hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      {dur}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-text-muted mb-1">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Description / Subtext
                 </label>
                 <input
@@ -736,8 +878,8 @@ FS Visuals Karachi | +92 327 3129464`;
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder="Complete photography & cinematic video production (4 Days)"
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none"
+                  placeholder="High-resolution fine-art photography & candid coverage"
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -751,7 +893,7 @@ FS Visuals Karachi | +92 327 3129464`;
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Total Project Amount (PKR)
                 </label>
                 <input
@@ -759,18 +901,13 @@ FS Visuals Karachi | +92 327 3129464`;
                   min="0"
                   step="500"
                   value={formData.totalAmount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      totalAmount: Number(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none font-mono"
+                  onChange={(e) => handleTotalAmountChange(e.target.value)}
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none font-mono font-bold transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Amount Paid / Advance (PKR)
                 </label>
                 <input
@@ -778,25 +915,29 @@ FS Visuals Karachi | +92 327 3129464`;
                   min="0"
                   step="500"
                   value={formData.paidAmount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      paidAmount: Number(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-gold focus:outline-none font-mono"
+                  onChange={(e) => handlePaidAmountChange(e.target.value)}
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none font-mono font-bold transition-all"
                 />
               </div>
             </div>
 
             {/* Computed Remaining Balance Box */}
-            <div className="p-4 bg-[#1b1b1b] border border-accent-gold/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="p-4 bg-[#161616] border border-accent-gold/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-widest text-text-muted block">
                   Remaining Balance Due:
                 </span>
                 <span className="text-xl font-bold text-accent-gold font-mono">
                   PKR {remainingBalance.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-semibold block mt-0.5">
+                  {formData.status === "UNPAID" ? (
+                    <span className="text-rose-400 font-bold">100% Outstanding (All Unpaid)</span>
+                  ) : formData.status === "PAID" ? (
+                    <span className="text-emerald-400 font-bold">Paid in Full (0 Due)</span>
+                  ) : (
+                    <span className="text-amber-400 font-bold">Partial Balance Pending</span>
+                  )}
                 </span>
               </div>
 
@@ -806,13 +947,17 @@ FS Visuals Karachi | +92 327 3129464`;
                   onClick={() =>
                     setFormData({
                       ...formData,
-                      paidAmount: formData.totalAmount,
-                      status: "PAID",
+                      paidAmount: 0,
+                      status: "UNPAID",
                     })
                   }
-                  className="flex-1 sm:flex-none text-[10px] uppercase font-semibold px-2.5 py-1.5 bg-white/5 border border-white/10 text-text-muted hover:text-white text-center"
+                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    formData.status === "UNPAID"
+                      ? "bg-rose-500/20 border-rose-500/40 text-rose-300"
+                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                  }`}
                 >
-                  Full Paid
+                  All Unpaid
                 </button>
                 <button
                   type="button"
@@ -823,9 +968,30 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "PARTIALLY PAID",
                     })
                   }
-                  className="flex-1 sm:flex-none text-[10px] uppercase font-semibold px-2.5 py-1.5 bg-white/5 border border-white/10 text-text-muted hover:text-white text-center"
+                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    formData.status === "PARTIALLY PAID"
+                      ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                  }`}
                 >
                   50% Adv
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      paidAmount: formData.totalAmount,
+                      status: "PAID",
+                    })
+                  }
+                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    formData.status === "PAID"
+                      ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                  }`}
+                >
+                  Full Paid
                 </button>
               </div>
             </div>
@@ -843,7 +1009,7 @@ FS Visuals Karachi | +92 327 3129464`;
                 setFormData({ ...formData, notes: e.target.value })
               }
               placeholder="e.g. 1 Drone pilot included for the reception night."
-              className="w-full bg-[#1b1b1b] border border-white/10 px-3.5 py-2 text-xs text-text-primary focus:border-accent-gold focus:outline-none"
+              className="w-full bg-[#161616] border border-white/10 px-3.5 py-2 text-xs text-text-primary focus:border-accent-gold focus:outline-none"
             />
           </div>
 
@@ -863,7 +1029,7 @@ FS Visuals Karachi | +92 327 3129464`;
             <button
               onClick={handleDownloadPDF}
               disabled={downloadingPdf || downloadingPng}
-              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50 rounded-none"
+              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50 rounded-xl"
             >
               {downloadingPdf ? (
                 <>
@@ -915,7 +1081,7 @@ FS Visuals Karachi | +92 327 3129464`;
               type="button"
               onClick={handleDownloadPNG}
               disabled={downloadingPng || downloadingPdf}
-              className="py-3 bg-[#1b1b1b] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50"
+              className="py-3 bg-[#161616] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50"
             >
               {downloadingPng ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
