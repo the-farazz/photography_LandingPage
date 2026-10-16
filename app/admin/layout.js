@@ -17,6 +17,7 @@ import {
   Sliders,
   Camera,
   Layers,
+  CalendarCheck,
   Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -102,6 +103,13 @@ export default function AdminLayout({ children }) {
       icon: FileText,
       badge: "Tool",
       isActive: pathname === "/admin",
+    },
+    {
+      label: "Event Budget & Payments",
+      href: "/admin/events",
+      icon: CalendarCheck,
+      badge: "Finance",
+      isActive: pathname === "/admin/events",
     },
     {
       label: "Client Inquiries",
@@ -341,3 +349,4 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
+

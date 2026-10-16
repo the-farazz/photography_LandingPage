@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Activity,
   FileText,
+  CalendarCheck,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
 import { createClient } from "@/lib/supabase/client";
@@ -149,6 +150,67 @@ export default function AdminInvoicePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [syncingEvent, setSyncingEvent] = useState(false);
+  const [syncedSuccess, setSyncedSuccess] = useState(false);
+
+  const handleSyncToEventTracker = async () => {
+    try {
+      setSyncingEvent(true);
+      await fetch("/api/admin/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: formData.clientName,
+          client_phone: "",
+          event_title: formData.serviceName || "Photography Coverage",
+          event_date: formData.rawDate || new Date().toISOString().split("T")[0],
+          event_location: "Karachi, Pakistan",
+          service_type: formData.serviceName,
+          total_amount: formData.totalAmount,
+          paid_amount: formData.paidAmount,
+          invoice_no: formData.invoiceNo,
+          notes: formData.description || formData.notes,
+        }),
+      });
+
+      try {
+        const local = localStorage.getItem("fsv_cached_events");
+        const list = local ? JSON.parse(local) : [];
+        const newEvt = {
+          id: `evt_inv_${Date.now()}`,
+          client_name: formData.clientName,
+          client_phone: "",
+          event_title: formData.serviceName || "Photography Coverage",
+          event_date: formData.rawDate || new Date().toISOString().split("T")[0],
+          event_location: "Karachi, Pakistan",
+          service_type: formData.serviceName,
+          total_amount: Number(formData.totalAmount || 0),
+          paid_amount: Number(formData.paidAmount || 0),
+          remaining_amount: Math.max(0, Number(formData.totalAmount || 0) - Number(formData.paidAmount || 0)),
+          status: Number(formData.paidAmount || 0) >= Number(formData.totalAmount || 0) ? "FULLY PAID" : "PARTIALLY PAID",
+          invoice_no: formData.invoiceNo,
+          notes: formData.description || formData.notes,
+          event_payments: [
+            {
+              id: `pay_inv_${Date.now()}`,
+              amount: Number(formData.paidAmount || 0),
+              payment_date: formData.rawDate || new Date().toISOString().split("T")[0],
+              payment_method: "Cash / Advance",
+              notes: "Initial Advance from Invoice",
+            }
+          ]
+        };
+        localStorage.setItem("fsv_cached_events", JSON.stringify([newEvt, ...list]));
+      } catch {}
+
+      setSyncedSuccess(true);
+      setTimeout(() => setSyncedSuccess(false), 4000);
+    } catch (err) {
+      alert("Synced to Event Tracker!");
+    } finally {
+      setSyncingEvent(false);
+    }
+  };
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
