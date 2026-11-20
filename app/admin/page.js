@@ -72,6 +72,7 @@ export default function AdminInvoicePage() {
     dueDate: "Upon Receipt",
     serviceName: "Photography Services",
     duration: "",
+    eventDate: "",
     description: "High-resolution fine-art photography & candid coverage",
     totalAmount: 20000,
     paidAmount: 0,
@@ -181,7 +182,7 @@ export default function AdminInvoicePage() {
         remaining_amount: remNum,
         status: computedStatus,
         invoice_no: formData.invoiceNo,
-        notes: formData.description || formData.notes,
+        notes: formData.eventDate ? `Total Days: ${formData.duration || "1 Day"} (${formData.eventDate}) | ${formData.description || formData.notes || ""}` : (formData.description || formData.notes || ""),
       };
 
       const res = await fetch("/api/admin/events", {
@@ -230,7 +231,7 @@ export default function AdminInvoicePage() {
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate]);
+  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate, formData.eventDate]);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
@@ -350,6 +351,7 @@ export default function AdminInvoicePage() {
       dueDate: "Upon Receipt",
       serviceName: computed.title,
       duration: "",
+      eventDate: "",
       description: computed.desc,
       totalAmount: 20000,
       paidAmount: 0,
@@ -485,12 +487,14 @@ export default function AdminInvoicePage() {
 
   // Copy WhatsApp summary message
   const handleCopyWhatsAppSummary = () => {
+    const displayEvtDate = formData.eventDate && formData.eventDate.trim() ? formData.eventDate.trim() : formData.invoiceDate;
     const summaryText = `*FS VISUALS - INVOICE DETAILS*
 ━━━━━━━━━━━━━━━━━━━━
 📄 *Invoice No:* ${formData.invoiceNo}
-👤 *Client Name:* ${formData.clientName} (${formData.clientId})
+👤 *Client Name:* ${formData.clientName || "Client"} (${formData.clientId})
 📅 *Date:* ${formData.invoiceDate}
-🎬 *Service:* ${formData.serviceName} (${formData.duration})
+🎬 *Service:* ${formData.serviceName}
+🗓️ *Total Days:* ${formData.duration || "1 Day"}${displayEvtDate ? ` (${displayEvtDate})` : ""}
 💰 *Total Amount:* PKR ${Number(formData.totalAmount).toLocaleString()}
 ✅ *Advance Paid:* PKR ${Number(formData.paidAmount).toLocaleString()}
 ⏳ *Remaining Balance:* PKR ${Number(remainingBalance).toLocaleString()}
@@ -825,12 +829,12 @@ FS Visuals Karachi | +92 327 3129464`;
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Duration with Smart Format and Quick Pills */}
-              <div className="sm:col-span-1 space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Total Days with Smart Format and Quick Pills */}
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-medium text-text-muted">
-                    Duration
+                    Total Days
                   </label>
                   {formData.duration && (
                     <button
@@ -846,7 +850,7 @@ FS Visuals Karachi | +92 327 3129464`;
                   type="text"
                   value={formData.duration}
                   onChange={(e) => handleDurationChange(e.target.value)}
-                  placeholder="Empty or type 1, 2..."
+                  placeholder="e.g. 1 Day, 2 Days"
                   className="w-full bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
                 />
                 {/* Quick Presets: 1 Day, 2 Days, 3 Days */}
@@ -868,20 +872,48 @@ FS Visuals Karachi | +92 327 3129464`;
                 </div>
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-text-muted mb-1.5">
-                  Description / Subtext
-                </label>
+              {/* Event Date(s) to print on invoice alongside Total Days */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-text-muted">
+                    Event Date(s) on Invoice
+                  </label>
+                  {formData.eventDate && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, eventDate: "" })}
+                      className="text-[10px] text-text-muted hover:text-rose-400 cursor-pointer"
+                    >
+                      Reset to Invoice Date
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="High-resolution fine-art photography & candid coverage"
-                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
+                  value={formData.eventDate || ""}
+                  onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                  placeholder={formData.invoiceDate ? `Default: ${formData.invoiceDate}` : "e.g. 24 & 25 Oct 2026"}
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
                 />
+                <span className="text-[10px] text-text-muted/70 block">
+                  Prints right under Total Days on invoice
+                </span>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">
+                Description / Subtext
+              </label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                placeholder="High-resolution fine-art photography & candid coverage"
+                className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
+              />
             </div>
           </div>
 

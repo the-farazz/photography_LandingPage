@@ -11,6 +11,7 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
     serviceName = "Photography Services",
     description = "High-resolution fine-art photography & candid coverage",
     duration = "",
+    eventDate = "",
     totalAmount = 20000,
     paidAmount = 0,
     status = "UNPAID",
@@ -36,6 +37,13 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
   };
 
   const badge = getStatusBadge();
+
+  const displayEventDate =
+    eventDate && eventDate.trim()
+      ? eventDate.trim()
+      : invoiceDate && invoiceDate.trim()
+      ? invoiceDate.trim()
+      : "";
 
   return (
     <div
@@ -162,14 +170,14 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
             className="grid grid-cols-12 py-2 px-3 bg-[#f8f9fa] border-b-[2px] border-black text-[10.5px] font-bold tracking-[0.18em] uppercase text-[#6c757d]"
             style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}
           >
-            <div className="col-span-7 text-left">DESCRIPTION</div>
-            <div className="col-span-2 text-center">DURATION</div>
+            <div className="col-span-6 text-left">DESCRIPTION</div>
+            <div className="col-span-3 text-center">TOTAL DAYS</div>
             <div className="col-span-3 text-right">AMOUNT</div>
           </div>
 
           {/* Table Row */}
           <div className="grid grid-cols-12 py-4 px-3 border-b border-[#e9ecef] items-start">
-            <div className="col-span-7 pr-4">
+            <div className="col-span-6 pr-4">
               <p
                 className="font-bold text-[14.5px] text-black leading-tight"
                 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}
@@ -186,10 +194,23 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
               )}
             </div>
             <div
-              className="col-span-2 text-center font-semibold text-[13px] text-black pt-0.5"
-              style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
+              className="col-span-3 text-center pt-0.5"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
-              {duration && duration.trim() ? duration : "—"}
+              <div
+                className="font-bold text-[13.5px] text-black leading-tight"
+                style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}
+              >
+                {duration && duration.trim() ? duration : "—"}
+              </div>
+              {displayEventDate && (
+                <div
+                  className="text-[11.5px] text-[#495057] font-semibold mt-1 leading-snug tracking-tight"
+                  style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
+                >
+                  {displayEventDate}
+                </div>
+              )}
             </div>
             <div
               className="col-span-3 text-right font-bold text-[13.5px] text-black pt-0.5"
