@@ -23,7 +23,9 @@ import {
   ShieldCheck,
   Activity,
   FileText,
+  Calendar,
   CalendarCheck,
+  Plus,
   ChevronDown,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
@@ -32,6 +34,21 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 export default function AdminInvoicePage() {
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr + "T00:00:00");
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const formatDateToLong = (dateObj) => {
     return dateObj.toLocaleDateString("en-US", {
       month: "long",
@@ -72,6 +89,7 @@ export default function AdminInvoicePage() {
     dueDate: "Upon Receipt",
     serviceName: "Photography Services",
     duration: "",
+    eventDates: [],
     eventDate: "",
     description: "High-resolution fine-art photography & candid coverage",
     totalAmount: 20000,
@@ -174,7 +192,7 @@ export default function AdminInvoicePage() {
         client_name: cName || "Client Booking",
         client_phone: "",
         event_title: formData.serviceName || "Photography Services",
-        event_date: formData.rawDate || new Date().toISOString().split("T")[0],
+        event_date: (Array.isArray(formData.eventDates) && formData.eventDates.find(Boolean)) || formData.rawDate || new Date().toISOString().split("T")[0],
         event_location: "Karachi, Pakistan",
         service_type: formData.serviceName,
         total_amount: totalNum,
@@ -231,7 +249,7 @@ export default function AdminInvoicePage() {
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate, formData.eventDate]);
+  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate, formData.eventDates]);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
@@ -254,20 +272,48 @@ export default function AdminInvoicePage() {
   const handleDurationChange = (rawVal) => {
     let formatted = rawVal;
     const trimmed = (rawVal || "").trim();
+    let numDays = 0;
 
-    // If user enters pure digits:
-    // 1 -> "1 Day", 2 -> "2 Days", 3 -> "3 Days"
-    if (/^\d+$/.test(trimmed)) {
-      const num = parseInt(trimmed, 10);
-      formatted = num === 1 ? "1 Day" : `${num} Days`;
+    const match = trimmed.match(/^(\d+)/);
+    if (match) {
+      numDays = parseInt(match[1], 10);
+      formatted = numDays === 1 ? "1 Day" : `${numDays} Days`;
+    } else if (!trimmed) {
+      formatted = "";
+      numDays = 0;
+    }
+
+    let nextDates = [...(formData.eventDates || [])];
+    if (numDays > nextDates.length) {
+      while (nextDates.length < numDays) {
+        nextDates.push("");
+      }
+    } else if (numDays < nextDates.length) {
+      nextDates = nextDates.slice(0, numDays);
     }
 
     const computed = computeServiceTitleAndDesc(services, formatted);
     setFormData((prev) => ({
       ...prev,
       duration: formatted,
+      eventDates: nextDates,
       description: computed.desc,
     }));
+  };
+
+  const handleEventDateChange = (index, dateVal) => {
+    const nextDates = [...(formData.eventDates || [])];
+    nextDates[index] = dateVal;
+    setFormData((prev) => ({
+      ...prev,
+      eventDates: nextDates,
+    }));
+  };
+
+  const handleAddDay = () => {
+    const currentNum = (formData.eventDates || []).length || (formData.duration ? parseInt(formData.duration, 10) || 0 : 0);
+    const newNum = currentNum + 1;
+    handleDurationChange(`${newNum} Days`);
   };
 
   const handleStatusChange = (newStatus) => {
@@ -351,6 +397,7 @@ export default function AdminInvoicePage() {
       dueDate: "Upon Receipt",
       serviceName: computed.title,
       duration: "",
+      eventDates: [],
       eventDate: "",
       description: computed.desc,
       totalAmount: 20000,
@@ -829,12 +876,13 @@ FS Visuals Karachi | +92 327 3129464`;
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Total Days with Smart Format and Quick Pills */}
+            {/* Total Days & Dynamic Event Date Pickers */}
+            <div className="space-y-3">
+              {/* Total Days Selection */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-medium text-text-muted">
-                    Total Days
+                    Total Event Days
                   </label>
                   {formData.duration && (
                     <button
@@ -846,21 +894,34 @@ FS Visuals Karachi | +92 327 3129464`;
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  value={formData.duration}
-                  onChange={(e) => handleDurationChange(e.target.value)}
-                  placeholder="e.g. 1 Day, 2 Days"
-                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
-                />
-                {/* Quick Presets: 1 Day, 2 Days, 3 Days */}
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={formData.duration}
+                    onChange={(e) => handleDurationChange(e.target.value)}
+                    placeholder="e.g. 1 Day, 2 Days, 4 Days"
+                    className="flex-1 bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddDay}
+                    className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-accent-gold/40 text-text-primary text-xs font-bold hover:text-accent-gold transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Add another event day"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-accent-gold" />
+                    <span>+ Day</span>
+                  </button>
+                </div>
+
+                {/* Quick Presets: 1 Day, 2 Days, 3 Days, 4 Days */}
                 <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
                   {["1 Day", "2 Days", "3 Days", "4 Days"].map((dur) => (
                     <button
                       key={dur}
                       type="button"
                       onClick={() => handleDurationChange(dur)}
-                      className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
                         formData.duration === dur
                           ? "bg-accent-gold/20 border-accent-gold text-accent-gold font-bold"
                           : "bg-white/5 border-white/10 text-text-muted hover:text-white hover:border-white/20"
@@ -872,33 +933,46 @@ FS Visuals Karachi | +92 327 3129464`;
                 </div>
               </div>
 
-              {/* Event Date(s) to print on invoice alongside Total Days */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-medium text-text-muted">
-                    Event Date(s) on Invoice
-                  </label>
-                  {formData.eventDate && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, eventDate: "" })}
-                      className="text-[10px] text-text-muted hover:text-rose-400 cursor-pointer"
-                    >
-                      Reset to Invoice Date
-                    </button>
-                  )}
+              {/* Dynamic Event Shoot Date Pickers */}
+              {Array.isArray(formData.eventDates) && formData.eventDates.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-white/5 bg-[#141414] border border-white/10 rounded-2xl p-3.5 shadow-inner">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-accent-gold" />
+                      <span>Pick Event Dates ({formData.eventDates.length} {formData.eventDates.length === 1 ? "Day" : "Days"})</span>
+                    </span>
+                    <span className="text-[10px] text-accent-gold font-semibold">
+                      Shows on Invoice
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {formData.eventDates.map((dVal, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-[#181818] border border-white/10 rounded-xl p-2.5 space-y-1 hover:border-white/20 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1">
+                            <span>Day {idx + 1} Event Date:</span>
+                          </span>
+                          {dVal && (
+                            <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                              {formatDateDisplay(dVal)}
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="date"
+                          value={dVal || ""}
+                          onChange={(e) => handleEventDateChange(idx, e.target.value)}
+                          className="w-full bg-[#121212] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  value={formData.eventDate || ""}
-                  onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                  placeholder={formData.invoiceDate ? `Default: ${formData.invoiceDate}` : "e.g. 24 & 25 Oct 2026"}
-                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted/40 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
-                />
-                <span className="text-[10px] text-text-muted/70 block">
-                  Prints right under Total Days on invoice
-                </span>
-              </div>
+              )}
             </div>
 
             <div>

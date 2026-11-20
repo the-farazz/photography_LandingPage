@@ -11,6 +11,7 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
     serviceName = "Photography Services",
     description = "High-resolution fine-art photography & candid coverage",
     duration = "",
+    eventDates = [],
     eventDate = "",
     totalAmount = 20000,
     paidAmount = 0,
@@ -38,12 +39,26 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
 
   const badge = getStatusBadge();
 
-  const displayEventDate =
-    eventDate && eventDate.trim()
-      ? eventDate.trim()
-      : invoiceDate && invoiceDate.trim()
-      ? invoiceDate.trim()
-      : "";
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr + "T00:00:00");
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Only take actual event dates selected by the user (never fall back to invoice creation date)
+  const rawList = Array.isArray(eventDates) && eventDates.length > 0
+    ? eventDates
+    : (eventDate && eventDate.trim() ? [eventDate.trim()] : []);
+  const validEventDates = rawList.filter((d) => d && typeof d === "string" && d.trim());
 
   return (
     <div
@@ -203,12 +218,22 @@ export default function InvoiceDocument({ data, id = "printable-invoice" }) {
               >
                 {duration && duration.trim() ? duration : "—"}
               </div>
-              {displayEventDate && (
-                <div
-                  className="text-[11.5px] text-[#495057] font-semibold mt-1 leading-snug tracking-tight"
-                  style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
-                >
-                  {displayEventDate}
+              {validEventDates.length > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  {validEventDates.map((dStr, idx) => (
+                    <div
+                      key={idx}
+                      className="text-[11px] text-[#495057] font-semibold leading-snug tracking-tight"
+                      style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
+                    >
+                      {validEventDates.length > 1 && (
+                        <span className="text-[#868e96] font-normal text-[10px] mr-1">
+                          Day {idx + 1}:
+                        </span>
+                      )}
+                      {formatDateDisplay(dStr)}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
