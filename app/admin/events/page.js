@@ -916,8 +916,18 @@ export default function AdminEventsBudgetPage() {
                     type="date"
                     required
                     value={paymentDate}
+                    onClick={(e) => {
+                      try {
+                        if (typeof e.target.showPicker === "function") e.target.showPicker();
+                      } catch {}
+                    }}
+                    onFocus={(e) => {
+                      try {
+                        if (typeof e.target.showPicker === "function") e.target.showPicker();
+                      } catch {}
+                    }}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                   />
                 </div>
                 <div>
@@ -1076,8 +1086,18 @@ export default function AdminEventsBudgetPage() {
                     type="date"
                     required
                     value={newEventData.event_date}
+                    onClick={(e) => {
+                      try {
+                        if (typeof e.target.showPicker === "function") e.target.showPicker();
+                      } catch {}
+                    }}
+                    onFocus={(e) => {
+                      try {
+                        if (typeof e.target.showPicker === "function") e.target.showPicker();
+                      } catch {}
+                    }}
                     onChange={(e) => setNewEventData({ ...newEventData, event_date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                   />
                 </div>
                 <div>

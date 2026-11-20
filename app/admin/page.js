@@ -39,22 +39,20 @@ export default function AdminInvoicePage() {
     try {
       const d = new Date(dateStr + "T00:00:00");
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+      const day = d.getDate();
+      const month = d.toLocaleDateString("en-US", { month: "short" });
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
     } catch {
       return dateStr;
     }
   };
 
   const formatDateToLong = (dateObj) => {
-    return dateObj.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleDateString("en-US", { month: "long" });
+    const year = dateObj.getFullYear();
+    return `${day} ${month} ${year}`;
   };
 
   const generateRandomClientId = () => {
@@ -743,8 +741,22 @@ FS Visuals Karachi | +92 327 3129464`;
                 <input
                   type="date"
                   value={formData.rawDate}
+                  onClick={(e) => {
+                    try {
+                      if (typeof e.target.showPicker === "function") {
+                        e.target.showPicker();
+                      }
+                    } catch {}
+                  }}
+                  onFocus={(e) => {
+                    try {
+                      if (typeof e.target.showPicker === "function") {
+                        e.target.showPicker();
+                      }
+                    } catch {}
+                  }}
                   onChange={handleDateChange}
-                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all"
+                  className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                 />
               </div>
 
@@ -950,23 +962,54 @@ FS Visuals Karachi | +92 327 3129464`;
                     {formData.eventDates.map((dVal, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#181818] border border-white/10 rounded-xl p-2.5 space-y-1 hover:border-white/20 transition-all"
+                        onClick={(e) => {
+                          const input = e.currentTarget.querySelector('input[type="date"]');
+                          if (input) {
+                            input.focus();
+                            try {
+                              if (typeof input.showPicker === "function") {
+                                input.showPicker();
+                              }
+                            } catch {}
+                          }
+                        }}
+                        className="bg-[#181818] border border-white/10 rounded-xl p-2.5 space-y-1.5 hover:border-accent-gold/40 transition-all cursor-pointer group"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-accent-gold/80" />
                             <span>Day {idx + 1} Event Date:</span>
                           </span>
-                          {dVal && (
-                            <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                          {dVal ? (
+                            <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-950/50 border border-emerald-500/30 px-1.5 py-0.5 rounded">
                               {formatDateDisplay(dVal)}
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] text-text-muted/60 italic">
+                              Click to pick date
                             </span>
                           )}
                         </div>
                         <input
                           type="date"
                           value={dVal || ""}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            try {
+                              if (typeof e.target.showPicker === "function") {
+                                e.target.showPicker();
+                              }
+                            } catch {}
+                          }}
+                          onFocus={(e) => {
+                            try {
+                              if (typeof e.target.showPicker === "function") {
+                                e.target.showPicker();
+                              }
+                            } catch {}
+                          }}
                           onChange={(e) => handleEventDateChange(idx, e.target.value)}
-                          className="w-full bg-[#121212] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium"
+                          className="w-full bg-[#121212] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                         />
                       </div>
                     ))}
