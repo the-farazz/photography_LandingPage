@@ -121,9 +121,9 @@ export default function AdminInboxPage() {
   return (
     <div className="min-h-screen bg-[#070707] text-text-primary flex flex-col font-sans p-3 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="bg-[#121212] border border-white/10 p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+      <div className="bg-[#121212] border border-white/10 p-3.5 sm:p-5 md:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Inbox className="w-6 h-6 text-accent-gold" />
             <h1 className="text-xl sm:text-2xl font-bold serif-heading text-text-primary tracking-tight">
               Client Inquiries &amp; Direct Leads
@@ -229,7 +229,7 @@ export default function AdminInboxPage() {
                           className="flex items-center gap-1.5 text-accent-warm hover:text-white hover:underline transition-colors"
                         >
                           <Mail className="w-3.5 h-3.5 shrink-0" />
-                          <span>{inq.email}</span>
+                          <span className="break-all">{inq.email}</span>
                         </a>
 
                         {inq.phone && (
@@ -270,7 +270,7 @@ export default function AdminInboxPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2 self-start shrink-0 pt-1 flex-wrap">
+                    <div className="flex items-center gap-2 self-stretch sm:self-start shrink-0 pt-2 sm:pt-1 flex-wrap w-full sm:w-auto">
                       <a
                         href={waUrl}
                         target="_blank"

@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
       <div className="absolute top-1/4 -left-32 w-80 h-80 bg-accent-gold/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-accent-gold/5 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md bg-[#121212] border border-white/10 p-6 sm:p-10 shadow-2xl">
+      <div className="relative z-10 w-full max-w-md bg-[#121212] border border-white/10 rounded-2xl p-5 sm:p-10 shadow-2xl">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-12 h-12 rounded-full border border-accent-gold/40 bg-accent-gold/10 flex items-center justify-center mb-3">

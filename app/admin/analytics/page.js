@@ -613,7 +613,7 @@ export default function AdminAnalyticsPage() {
       {/* ========================================================================= */}
       {/* TOP HEADER WITH TRUE PHYSICAL IOS TOGGLE SWITCH & REFRESH */}
       {/* ========================================================================= */}
-      <div className="bg-[#121212] border border-white/10 p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+      <div className="bg-[#121212] border border-white/10 p-3.5 sm:p-5 md:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold serif-heading text-text-primary tracking-tight flex items-center gap-2.5">
             <Activity className="w-6 h-6 text-accent-gold" />
@@ -693,9 +693,9 @@ export default function AdminAnalyticsPage() {
       {/* ========================================================================= */}
       {/* 4 KPI METRIC STATS CARDS */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* 1. Real Unique Clients */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+        <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
               Real Unique Clients
@@ -713,7 +713,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* 2. Real Page Impressions */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+        <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
               Real Page Impressions
@@ -731,7 +731,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* 3. Returning Clients */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+        <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
               Returning Clients
@@ -749,7 +749,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* 4. Live Active Right Now Heartbeat */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-emerald-500/30 bg-emerald-950/20 relative overflow-hidden shadow-lg">
+        <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-emerald-500/30 bg-emerald-950/20 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
@@ -775,7 +775,7 @@ export default function AdminAnalyticsPage() {
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Client Conversion Funnel (7 Columns) */}
-        <div className="lg:col-span-7 bg-[#121212] rounded-2xl p-6 border border-white/10 space-y-4 shadow-xl">
+        <div className="lg:col-span-7 bg-[#121212] rounded-2xl p-3.5 sm:p-5 md:p-6 border border-white/10 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-accent-gold" />
@@ -1103,8 +1103,9 @@ export default function AdminAnalyticsPage() {
             No records found in this category.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto touch-pan-x">
+            <div className="sm:hidden px-4 py-1.5 bg-[#141414] text-[10px] text-text-muted font-mono border-b border-white/5">⇄ Swipe horizontally to inspect visitor journey logs</div>
+            <table className="w-full min-w-[850px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
                   <th className="px-5 py-3.5">Visitor / Client</th>

@@ -314,14 +314,14 @@ export default function AdminLayout({ children }) {
       {/* ========================================================================= */}
       {/* MAIN VIEWPORT CONTAINER */}
       {/* ========================================================================= */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full overflow-x-hidden">
         {/* Mobile Top Header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-30 h-14 bg-[#111111] border-b border-white/10 px-4 flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="p-2 rounded bg-white/5 border border-white/10 text-text-muted hover:text-white"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors cursor-pointer"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-4 h-4" />
@@ -333,10 +333,10 @@ export default function AdminLayout({ children }) {
 
           <div className="flex items-center gap-2">
             <Link
-              href={pathname === "/admin" ? "/admin/analytics" : "/admin"}
-              className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-[11px] font-bold uppercase text-accent-gold"
+              href={pathname === "/admin" ? "/admin/events" : "/admin"}
+              className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold uppercase text-accent-gold hover:bg-white/10 transition-colors"
             >
-              {pathname === "/admin" ? "Analytics →" : "Invoices →"}
+              {pathname === "/admin" ? "Events →" : "Invoices →"}
             </Link>
           </div>
         </header>

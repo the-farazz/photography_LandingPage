@@ -594,7 +594,7 @@ FS Visuals Karachi | +92 327 3129464`;
       </div>
 
       {/* Top Invoice Action Header */}
-      <header className="sticky top-0 z-30 bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-lg">
+      <header className="bg-[#111111] border-b border-white/10 px-3 sm:px-6 py-3 sm:py-4 shadow-lg lg:sticky lg:top-0 z-20">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
           {/* Left Title */}
           <div>
@@ -655,7 +655,7 @@ FS Visuals Karachi | +92 327 3129464`;
       </header>
 
       {/* Mobile Tab Switcher (Visible only on < lg screens) */}
-      <div className="lg:hidden bg-[#141414] border-b border-white/10 px-4 py-2 sticky top-[53px] z-20">
+      <div className="lg:hidden bg-[#141414] border-b border-white/10 px-4 py-2 sticky top-14 z-20">
         <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
           <button
             type="button"
@@ -686,10 +686,10 @@ FS Visuals Karachi | +92 327 3129464`;
       </div>
 
       {/* Main Split Grid */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-5 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
         {/* Left Column: Form Controls (Shown on desktop OR when mobileTab === 'editor') */}
         <div
-          className={`lg:col-span-5 bg-[#121212] border border-white/10 p-5 sm:p-7 rounded-2xl space-y-6 shadow-xl ${
+          className={`lg:col-span-5 bg-[#121212] border border-white/10 p-3.5 sm:p-6 md:p-7 rounded-2xl space-y-5 sm:space-y-6 shadow-xl ${
             mobileTab === "editor" ? "block" : "hidden lg:block"
           }`}
         >
@@ -1271,59 +1271,58 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
           </div>
 
+          {/* Mobile Swipe Notice */}
+          <div className="lg:hidden flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-text-muted mb-3 font-mono">
+            <span>⇄ Swipe horizontally to inspect full invoice document</span>
+          </div>
+
           {/* Invoice Document Canvas Container */}
-          <div className="w-full overflow-x-auto pb-6 rounded-sm">
+          <div className="w-full overflow-x-auto pb-6 rounded-xl touch-pan-x">
             <div className="min-w-[650px] sm:min-w-0">
               <InvoiceDocument data={formData} id="printable-invoice-preview" />
             </div>
           </div>
 
           {/* Mobile Quick Action Buttons on Preview Screen */}
-          <div className="w-full space-y-2 lg:hidden pb-6">
+          <div className="w-full space-y-2.5 lg:hidden pb-6">
             <button
               type="button"
               onClick={() => handleSaveInvoice(false)}
               disabled={syncingEvent}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 rounded-xl shadow-md cursor-pointer"
+              className={`w-full py-3.5 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 rounded-xl shadow-md cursor-pointer transition-all ${
+                syncedSuccess
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40"
+              }`}
             >
               {syncingEvent ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : syncedSuccess ? (
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
               ) : (
                 <BookmarkCheck className="w-4 h-4" />
               )}
               <span>{syncedSuccess ? "Saved to Event Budget!" : "Save Invoice to Event Budget"}</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadPNG}
-                disabled={downloadingPng || downloadingPdf}
-                className="py-2.5 bg-[#161616] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50 rounded-xl"
-              >
-                {downloadingPng ? (
+            <button
+              type="button"
+              onClick={handleDownloadPDF}
+              disabled={downloadingPdf || downloadingPng}
+              className="w-full py-3.5 bg-accent-gold text-bg-primary text-xs font-extrabold tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-accent-warm shadow-lg shadow-accent-gold/20 disabled:opacity-50 rounded-xl cursor-pointer"
+            >
+              {downloadingPdf ? (
+                <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ImageIcon className="w-4 h-4 text-accent-gold" />
-                )}
-                Save Image
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadPDF}
-                disabled={downloadingPdf || downloadingPng}
-                className="py-2.5 bg-accent-gold text-bg-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-accent-warm shadow-md shadow-accent-gold/10 disabled:opacity-50 rounded-xl"
-              >
-                {downloadingPdf ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
+                  <span>Downloading Invoice PDF...</span>
+                </>
+              ) : (
+                <>
                   <Download className="w-4 h-4" />
-                )}
-                Download PDF
-              </button>
-            </div>
+                  <span>Download Invoice PDF</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </main>

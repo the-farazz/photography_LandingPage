@@ -723,9 +723,9 @@ export default function AdminEventsBudgetPage() {
 
       {/* TELEMETRY METRIC CARDS (Context-Aware: Schedule Metrics vs Financial Metrics) */}
       {activeTab === "schedule" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Upcoming Shoots */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Upcoming Shoots
@@ -743,7 +743,7 @@ export default function AdminEventsBudgetPage() {
           </div>
 
           {/* Card 2: Shoots This Month */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 This Month
@@ -761,7 +761,7 @@ export default function AdminEventsBudgetPage() {
           </div>
 
           {/* Card 3: Next Month */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Next Month
@@ -779,7 +779,7 @@ export default function AdminEventsBudgetPage() {
           </div>
 
           {/* Card 4: Total Booked Days */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Total Shoot Dates
@@ -797,9 +797,9 @@ export default function AdminEventsBudgetPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Total Bookings */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Total Bookings
@@ -821,7 +821,7 @@ export default function AdminEventsBudgetPage() {
           </div>
 
           {/* Card 2: Total Revenue */}
-          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+          <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-5 border border-white/10 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Total Revenue
@@ -887,37 +887,37 @@ export default function AdminEventsBudgetPage() {
 
       {/* VIEW SWITCHER TABS: UPCOMING SCHEDULE vs BOOKINGS & BUDGET */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-2">
-        <div className="flex items-center gap-2 p-1 bg-[#141414] border border-white/10 rounded-xl w-fit">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-[#141414] border border-white/10 rounded-xl w-full sm:w-fit">
           <button
             type="button"
             onClick={() => setActiveTab("schedule")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-lg text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
               activeTab === "schedule"
                 ? "bg-accent-gold text-bg-primary shadow-sm font-extrabold"
                 : "text-text-muted hover:text-white"
             }`}
           >
-            <CalendarDays className="w-4 h-4" />
-            <span>Upcoming Schedule ({allShoots.length})</span>
+            <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">Schedule ({allShoots.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("bookings")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-lg text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
               activeTab === "bookings"
                 ? "bg-accent-gold text-bg-primary shadow-sm font-extrabold"
                 : "text-text-muted hover:text-white"
             }`}
           >
-            <DollarSign className="w-4 h-4" />
-            <span>Bookings &amp; Budget ({events.length})</span>
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">Bookings ({events.length})</span>
           </button>
         </div>
 
         {/* Schedule Sub-Filters (Visible in Schedule View) */}
         {activeTab === "schedule" && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full sm:w-auto">
             {[
               { id: "ALL", label: "All Dates" },
               { id: "UPCOMING", label: "Upcoming" },
@@ -1091,8 +1091,9 @@ export default function AdminEventsBudgetPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto touch-pan-x">
+              <div className="sm:hidden px-4 py-1.5 bg-[#141414] text-[10px] text-text-muted font-mono border-b border-white/5">⇄ Swipe horizontally to see all financial columns</div>
+              <table className="w-full min-w-[760px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
                     <th className="px-5 py-3.5">Shoot Date</th>
@@ -1251,8 +1252,9 @@ export default function AdminEventsBudgetPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto touch-pan-x">
+              <div className="sm:hidden px-4 py-1.5 bg-[#141414] text-[10px] text-text-muted font-mono border-b border-white/5">⇄ Swipe horizontally to see all financial columns</div>
+              <table className="w-full min-w-[760px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
                     <th className="px-5 py-3.5">Client &amp; Scope</th>
@@ -1437,8 +1439,8 @@ export default function AdminEventsBudgetPage() {
       {/* MODAL 1: RECORD PAYMENT */}
       {/* ========================================================================= */}
       {paymentModalOpen && activeEventForPayment && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl relative space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
@@ -1949,8 +1951,8 @@ export default function AdminEventsBudgetPage() {
       {/* MODAL 3: PAYMENT HISTORY DRAWER / LEDGER */}
       {/* ========================================================================= */}
       {historyModalOpen && activeEventForHistory && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl relative space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
