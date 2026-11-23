@@ -27,6 +27,9 @@ import {
   CalendarCheck,
   Plus,
   ChevronDown,
+  BookmarkCheck,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import InvoiceDocument from "@/components/admin/InvoiceDocument";
 import { createClient } from "@/lib/supabase/client";
@@ -171,24 +174,43 @@ export default function AdminInvoicePage() {
   const [copied, setCopied] = useState(false);
   const [syncingEvent, setSyncingEvent] = useState(false);
   const [syncedSuccess, setSyncedSuccess] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
 
-  const handleSyncToEventTracker = async (silent = false) => {
-    // Only sync if actual client name is entered by the user
+  const showToast = (msg, type = "success") => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleSaveInvoice = async (silent = false) => {
     const cName = formData.clientName && formData.clientName.trim();
-    if (!cName || Number(formData.totalAmount || 0) <= 0) return;
+    if (!cName) {
+      if (!silent) showToast("Please enter Client Name before saving.", "error");
+      return;
+    }
+    const totalNum = Number(formData.totalAmount || 0);
+    if (totalNum <= 0) {
+      if (!silent) showToast("Please enter a valid Total Project Amount.", "error");
+      return;
+    }
 
     try {
       setSyncingEvent(true);
-      const totalNum = Number(formData.totalAmount || 0);
       const paidNum = Number(formData.paidAmount || 0);
       const remNum = Math.max(0, totalNum - paidNum);
       const computedStatus = paidNum <= 0 ? "UNPAID" : remNum <= 0 ? "FULLY PAID" : "PARTIALLY PAID";
+
+      const validDates = Array.isArray(formData.eventDates)
+        ? formData.eventDates.filter((d) => d && typeof d === "string" && d.trim())
+        : [];
+      const primaryDate = validDates[0] || formData.rawDate || new Date().toISOString().split("T")[0];
+      const datesTag = validDates.length > 0 ? `[DATES:${validDates.join(",")}] ` : "";
+      const durTag = formData.duration ? `Duration: ${formData.duration} | ` : "";
 
       const payload = {
         client_name: cName,
         client_phone: "",
         event_title: formData.serviceName || "Photography Services",
-        event_date: (Array.isArray(formData.eventDates) && formData.eventDates.find(Boolean)) || formData.rawDate || new Date().toISOString().split("T")[0],
+        event_date: primaryDate,
         event_location: "Karachi, Pakistan",
         service_type: formData.serviceName,
         total_amount: totalNum,
@@ -196,7 +218,7 @@ export default function AdminInvoicePage() {
         remaining_amount: remNum,
         status: computedStatus,
         invoice_no: formData.invoiceNo,
-        notes: formData.eventDate ? `Total Days: ${formData.duration || "1 Day"} (${formData.eventDate}) | ${formData.description || formData.notes || ""}` : (formData.description || formData.notes || ""),
+        notes: `${datesTag}${durTag}${formData.description || formData.notes || ""}`,
       };
 
       const res = await fetch("/api/admin/events", {
@@ -229,13 +251,21 @@ export default function AdminInvoicePage() {
       } catch {}
 
       setSyncedSuccess(true);
+      if (!silent) {
+        showToast(`Invoice ${formData.invoiceNo} saved to Event Budget!`, "success");
+      }
       setTimeout(() => setSyncedSuccess(false), 3500);
     } catch (err) {
-      console.warn("Event budget auto-sync notice:", err);
+      console.warn("Event budget save notice:", err);
+      if (!silent) {
+        showToast("Failed to save invoice. Please try again.", "error");
+      }
     } finally {
       setSyncingEvent(false);
     }
   };
+
+  const handleSyncToEventTracker = (silent = true) => handleSaveInvoice(silent);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
@@ -578,16 +608,40 @@ FS Visuals Karachi | +92 327 3129464`;
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-wrap">
             {/* View Events Budget Link */}
             <Link
               href="/admin/events"
               className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-xs font-semibold bg-accent-gold/10 border border-accent-gold/30 text-accent-gold hover:bg-accent-gold/20 transition-all uppercase tracking-wider rounded-xl cursor-pointer"
-              title="Open Events Budget & Payments Tracker"
+              title="Open Events Budget"
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Event Budget</span>
             </Link>
+
+            {/* Save Invoice Button (Explicit Save without downloading) */}
+            <button
+              type="button"
+              onClick={() => handleSaveInvoice(false)}
+              disabled={syncingEvent}
+              className={`flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+                syncedSuccess
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/30"
+              }`}
+              title="Save invoice to Event Budget without downloading"
+            >
+              {syncingEvent ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : syncedSuccess ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+              ) : (
+                <BookmarkCheck className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">{syncedSuccess ? "Saved!" : "Save Invoice"}</span>
+              <span className="sm:hidden">Save</span>
+            </button>
+
             {/* WhatsApp Text */}
             <button
               onClick={handleCopyWhatsAppSummary}
@@ -752,29 +806,40 @@ FS Visuals Karachi | +92 327 3129464`;
                 <label className="block text-xs font-medium text-text-muted mb-1.5">
                   Payment Status
                 </label>
-                <div className="relative">
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className={`w-full bg-[#161616] border rounded-xl px-4 py-2.5 text-xs appearance-none focus:border-accent-gold/50 focus:ring-1 focus:ring-accent-gold/20 focus:outline-none cursor-pointer pr-10 font-bold transition-all ${
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange("UNPAID")}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
                       formData.status === "UNPAID"
-                        ? "border-rose-500/40 text-rose-300"
-                        : formData.status === "PAID"
-                        ? "border-emerald-500/40 text-emerald-300"
-                        : "border-amber-500/40 text-amber-300"
+                        ? "bg-rose-950/40 border-rose-500/50 text-rose-300 shadow-sm"
+                        : "bg-[#161616] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
                     }`}
                   >
-                    <option value="UNPAID" className="bg-[#181818] text-rose-300 font-semibold">
-                      UNPAID / DUE
-                    </option>
-                    <option value="PARTIALLY PAID" className="bg-[#181818] text-amber-300 font-semibold">
-                      PARTIALLY PAID
-                    </option>
-                    <option value="PAID" className="bg-[#181818] text-emerald-300 font-semibold">
-                      PAID IN FULL
-                    </option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-text-muted absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    Unpaid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange("PARTIALLY PAID")}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                      formData.status === "PARTIALLY PAID"
+                        ? "bg-amber-950/40 border-amber-500/50 text-amber-300 shadow-sm"
+                        : "bg-[#161616] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
+                    }`}
+                  >
+                    Partial
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange("PAID")}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                      formData.status === "PAID"
+                        ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-sm"
+                        : "bg-[#161616] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
+                    }`}
+                  >
+                    Paid
+                  </button>
                 </div>
               </div>
             </div>
@@ -807,56 +872,56 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
 
             {/* Multi-Select Service Chips (Photography, Videography, Drone, Album) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => handleToggleService("photography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.photography
-                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
+                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
-                <Camera className="w-3.5 h-3.5 shrink-0" />
+                <Camera className="w-4 h-4 shrink-0" />
                 <span>Photography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("videography")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.videography
-                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
+                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
-                <Film className="w-3.5 h-3.5 shrink-0" />
+                <Film className="w-4 h-4 shrink-0" />
                 <span>Videography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("drone")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.drone
-                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
+                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
-                <Compass className="w-3.5 h-3.5 shrink-0" />
+                <Compass className="w-4 h-4 shrink-0" />
                 <span>Drone</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("album")}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-1 sm:px-2 text-[11px] sm:text-xs font-semibold border transition-all text-center leading-tight rounded-xl ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.album
-                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-sm font-bold"
-                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30"
+                    ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
+                    : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <BookOpen className="w-4 h-4 shrink-0" />
                 <span>Album</span>
               </button>
             </div>
@@ -906,11 +971,11 @@ FS Visuals Karachi | +92 327 3129464`;
                   <button
                     type="button"
                     onClick={handleAddDay}
-                    className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-accent-gold/40 text-text-primary text-xs font-bold hover:text-accent-gold transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                    className="px-3.5 py-2.5 rounded-xl bg-accent-gold/10 border border-accent-gold/30 hover:bg-accent-gold/20 text-accent-gold text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                     title="Add another event day"
                   >
-                    <Plus className="w-3.5 h-3.5 text-accent-gold" />
-                    <span>+ Day</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Day</span>
                   </button>
                 </div>
 
@@ -1161,12 +1226,40 @@ FS Visuals Karachi | +92 327 3129464`;
             </button>
           </div>
 
-          {/* Big Download PDF Button */}
-          <div className="pt-2">
+          {/* Save & Download Action Buttons */}
+          <div className="pt-3 space-y-2.5">
+            {/* Primary Save to Event Budget Button (NO download required!) */}
             <button
+              type="button"
+              onClick={() => handleSaveInvoice(false)}
+              disabled={syncingEvent}
+              className={`w-full py-3.5 text-xs font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 rounded-xl shadow-lg cursor-pointer ${
+                syncedSuccess
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40"
+              }`}
+            >
+              {syncingEvent ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Saving to Event Budget...
+                </>
+              ) : syncedSuccess ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300" /> Invoice Saved to Event Budget!
+                </>
+              ) : (
+                <>
+                  <BookmarkCheck className="w-4 h-4" /> Save Invoice to Event Budget
+                </>
+              )}
+            </button>
+
+            {/* Download PDF Button */}
+            <button
+              type="button"
               onClick={handleDownloadPDF}
               disabled={downloadingPdf || downloadingPng}
-              className="w-full py-4 bg-accent-gold text-bg-primary text-xs font-bold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50 rounded-xl"
+              className="w-full py-3.5 bg-accent-gold text-bg-primary text-xs font-extrabold tracking-widest uppercase hover:bg-accent-warm transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent-gold/10 disabled:opacity-50 rounded-xl cursor-pointer"
             >
               {downloadingPdf ? (
                 <>
@@ -1213,36 +1306,74 @@ FS Visuals Karachi | +92 327 3129464`;
           </div>
 
           {/* Mobile Quick Action Buttons on Preview Screen */}
-          <div className="w-full grid grid-cols-2 gap-2.5 lg:hidden pb-6">
+          <div className="w-full space-y-2 lg:hidden pb-6">
             <button
               type="button"
-              onClick={handleDownloadPNG}
-              disabled={downloadingPng || downloadingPdf}
-              className="py-3 bg-[#161616] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50"
+              onClick={() => handleSaveInvoice(false)}
+              disabled={syncingEvent}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 rounded-xl shadow-md cursor-pointer"
             >
-              {downloadingPng ? (
+              {syncingEvent ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : syncedSuccess ? (
+                <CheckCircle2 className="w-4 h-4" />
               ) : (
-                <ImageIcon className="w-4 h-4 text-accent-gold" />
+                <BookmarkCheck className="w-4 h-4" />
               )}
-              Save Image
+              <span>{syncedSuccess ? "Saved to Event Budget!" : "Save Invoice to Event Budget"}</span>
             </button>
-            <button
-              type="button"
-              onClick={handleDownloadPDF}
-              disabled={downloadingPdf || downloadingPng}
-              className="py-3 bg-accent-gold text-bg-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-accent-warm shadow-md shadow-accent-gold/10 disabled:opacity-50"
-            >
-              {downloadingPdf ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              Download PDF
-            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadPNG}
+                disabled={downloadingPng || downloadingPdf}
+                className="py-2.5 bg-[#161616] border border-white/20 text-text-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:border-accent-gold disabled:opacity-50 rounded-xl"
+              >
+                {downloadingPng ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4 text-accent-gold" />
+                )}
+                Save Image
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPDF}
+                disabled={downloadingPdf || downloadingPng}
+                className="py-2.5 bg-accent-gold text-bg-primary text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-accent-warm shadow-md shadow-accent-gold/10 disabled:opacity-50 rounded-xl"
+              >
+                {downloadingPdf ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                Download PDF
+              </button>
+            </div>
           </div>
         </div>
       </main>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div
+            className={`px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-2.5 text-xs font-semibold ${
+              toastMessage.type === "error"
+                ? "bg-rose-950/90 border-rose-500/50 text-rose-200"
+                : "bg-emerald-950/90 border-emerald-500/50 text-emerald-200"
+            }`}
+          >
+            {toastMessage.type === "error" ? (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            )}
+            <span>{toastMessage.msg}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

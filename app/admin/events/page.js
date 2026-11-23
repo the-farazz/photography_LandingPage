@@ -31,6 +31,8 @@ import {
   ChevronDown,
   Camera,
   Film,
+  CalendarDays,
+  MessageCircle,
 } from "lucide-react";
 
 export default function AdminEventsBudgetPage() {
@@ -42,6 +44,10 @@ export default function AdminEventsBudgetPage() {
   const [selectedMonth, setSelectedMonth] = useState("ALL");
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const monthDropdownRef = useRef(null);
+
+  // View Mode: 'schedule' (Upcoming Shoots Calendar Table) vs 'bookings' (Finance Deals Table)
+  const [activeTab, setActiveTab] = useState("schedule");
+  const [scheduleTimeFilter, setScheduleTimeFilter] = useState("ALL"); // ALL, UPCOMING, THIS_MONTH, NEXT_MONTH, PAST
 
   // Modals state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -55,6 +61,9 @@ export default function AdminEventsBudgetPage() {
   // New Event Modal state
   const [newEventModalOpen, setNewEventModalOpen] = useState(false);
   const [submittingNewEvent, setSubmittingNewEvent] = useState(false);
+  const [eventDaysCount, setEventDaysCount] = useState(1);
+  const [multiEventDates, setMultiEventDates] = useState([new Date().toISOString().split("T")[0]]);
+
   const [newEventData, setNewEventData] = useState({
     client_name: "",
     client_phone: "",
@@ -237,6 +246,16 @@ export default function AdminEventsBudgetPage() {
   };
 
   // 4. Submit New Event
+  const handleDaysCountChange = (num) => {
+    const count = Math.max(1, Math.min(10, num));
+    setEventDaysCount(count);
+    const nextDates = [...multiEventDates];
+    while (nextDates.length < count) {
+      nextDates.push("");
+    }
+    setMultiEventDates(nextDates.slice(0, count));
+  };
+
   const handleCreateNewEvent = async (e) => {
     e.preventDefault();
     if (!newEventData.client_name.trim()) {
@@ -254,10 +273,22 @@ export default function AdminEventsBudgetPage() {
 
     setSubmittingNewEvent(true);
     try {
+      const validDates = multiEventDates.filter(Boolean);
+      const primaryDate = validDates[0] || newEventData.event_date || new Date().toISOString().split("T")[0];
+      const datesMeta = validDates.length > 0 ? `[DATES:${validDates.join(",")}] ` : "";
+      const durLabel = validDates.length > 1 ? `Duration: ${validDates.length} Days | ` : "";
+      const notesPayload = `${datesMeta}${durLabel}${newEventData.notes || ""}`;
+
+      const payload = {
+        ...newEventData,
+        event_date: primaryDate,
+        notes: notesPayload,
+      };
+
       const res = await fetch("/api/admin/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEventData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -266,7 +297,7 @@ export default function AdminEventsBudgetPage() {
 
       const newEvt = data?.event || {
         id: `evt_${Date.now()}`,
-        ...newEventData,
+        ...payload,
         total_amount: total,
         paid_amount: paid,
         remaining_amount: remaining,
@@ -275,7 +306,7 @@ export default function AdminEventsBudgetPage() {
           {
             id: `pay_init_${Date.now()}`,
             amount: paid,
-            payment_date: newEventData.event_date,
+            payment_date: primaryDate,
             payment_method: newEventData.payment_method,
             notes: "Initial Advance / Booking Deposit",
           }
@@ -300,6 +331,8 @@ export default function AdminEventsBudgetPage() {
         invoice_no: "",
         notes: "",
       });
+      setEventDaysCount(1);
+      setMultiEventDates([new Date().toISOString().split("T")[0]]);
     } catch {
       showToast("Event saved successfully.", "success");
     } finally {
@@ -382,6 +415,120 @@ export default function AdminEventsBudgetPage() {
       return true;
     });
   }, [events, selectedMonth, statusFilter, searchQuery]);
+
+  // Extract all individual shoot dates (multi-day shoots flattened into chronological items)
+  const allShoots = useMemo(() => {
+    const list = [];
+    events.forEach((ev) => {
+      let dates = [];
+      const notes = ev.notes || "";
+      if (notes.includes("[DATES:")) {
+        try {
+          const dPart = notes.split("[DATES:")[1].split("]")[0];
+          dates = dPart.split(",").map((d) => d.trim()).filter(Boolean);
+        } catch {}
+      }
+      if (dates.length === 0 && ev.event_date) {
+        dates = [ev.event_date];
+      }
+
+      dates.forEach((dStr, idx) => {
+        const total = Number(ev.total_amount || 0);
+        const paid = Number(ev.paid_amount || 0);
+        const remaining = Math.max(0, total - paid);
+        list.push({
+          shootId: `${ev.id}_${idx}`,
+          eventId: ev.id,
+          clientName: ev.client_name,
+          invoiceNo: ev.invoice_no,
+          clientPhone: ev.client_phone,
+          shootDate: dStr,
+          dayIndex: idx + 1,
+          totalDays: dates.length,
+          dayLabel: dates.length > 1 ? `Day ${idx + 1} of ${dates.length}` : (notes.includes("Duration:") ? notes.match(/Duration: ([^|]+)/)?.[1]?.trim() || "1 Day" : "1 Day"),
+          scope: ev.service_type || ev.event_title || "Photography Services",
+          location: ev.event_location || "Karachi, Pakistan",
+          totalAmount: total,
+          paidAmount: paid,
+          remainingAmount: remaining,
+          status: ev.status,
+          rawEvent: ev,
+        });
+      });
+    });
+
+    // Sort chronologically ascending (earliest upcoming to furthest)
+    list.sort((a, b) => {
+      const da = new Date(a.shootDate + (a.shootDate.includes("T") ? "" : "T00:00:00")).getTime() || 0;
+      const db = new Date(b.shootDate + (b.shootDate.includes("T") ? "" : "T00:00:00")).getTime() || 0;
+      return da - db;
+    });
+
+    return list;
+  }, [events]);
+
+  // Filtered shoots based on schedule filters & search
+  const filteredShoots = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+    return allShoots.filter((shoot) => {
+      const d = new Date(shoot.shootDate + (shoot.shootDate.includes("T") ? "" : "T00:00:00"));
+      const isPast = !isNaN(d.getTime()) && d.getTime() < now.getTime();
+      const monthKey = !isNaN(d.getTime()) ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` : "";
+
+      if (scheduleTimeFilter === "UPCOMING" && isPast) return false;
+      if (scheduleTimeFilter === "THIS_MONTH" && monthKey !== currentMonthKey) return false;
+      if (scheduleTimeFilter === "NEXT_MONTH" && monthKey !== nextMonthKey) return false;
+      if (scheduleTimeFilter === "PAST" && !isPast) return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const m1 = shoot.clientName.toLowerCase().includes(q);
+        const m2 = (shoot.invoiceNo || "").toLowerCase().includes(q);
+        const m3 = shoot.scope.toLowerCase().includes(q);
+        const m4 = (shoot.clientPhone || "").toLowerCase().includes(q);
+        return m1 || m2 || m3 || m4;
+      }
+      return true;
+    });
+  }, [allShoots, scheduleTimeFilter, searchQuery]);
+
+  // Compute countdown / relative label for each shoot date
+  const getRelativeDateInfo = (dateStr) => {
+    if (!dateStr) return { label: "TBD", color: "text-text-muted bg-white/5 border-white/10" };
+    try {
+      const target = new Date(dateStr + (dateStr.includes("T") ? "" : "T00:00:00"));
+      if (isNaN(target.getTime())) return { label: dateStr, color: "text-text-muted bg-white/5 border-white/10" };
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      target.setHours(0, 0, 0, 0);
+
+      const diffTime = target.getTime() - now.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        return { label: "Today", color: "text-emerald-300 bg-emerald-950/80 border-emerald-500/50 font-extrabold animate-pulse" };
+      } else if (diffDays === 1) {
+        return { label: "Tomorrow", color: "text-amber-300 bg-amber-950/80 border-amber-500/50 font-bold" };
+      } else if (diffDays > 1 && diffDays <= 7) {
+        return { label: `In ${diffDays} Days`, color: "text-accent-gold bg-accent-gold/15 border-accent-gold/40 font-bold" };
+      } else if (diffDays > 7 && diffDays <= 30) {
+        return { label: `In ${diffDays} Days`, color: "text-blue-300 bg-blue-950/50 border-blue-500/30 font-semibold" };
+      } else if (diffDays > 30) {
+        return { label: "Next Month", color: "text-purple-300 bg-purple-950/40 border-purple-500/30" };
+      } else {
+        return { label: "Completed", color: "text-text-muted/60 bg-white/5 border-white/5" };
+      }
+    } catch {
+      return { label: dateStr, color: "text-text-muted bg-white/5 border-white/10" };
+    }
+  };
 
   const metrics = useMemo(() => {
     let totalRevenue = 0;
@@ -470,10 +617,10 @@ export default function AdminEventsBudgetPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold serif-heading text-text-primary tracking-tight flex items-center gap-2.5">
             <CalendarCheck className="w-6 h-6 text-accent-gold" />
-            <span>Event Budget &amp; Revenue Telemetry</span>
+            <span>Event Budget</span>
           </h1>
           <p className="text-xs text-text-muted mt-1">
-            Real-time tracking of booked events, cash collections, and pending client balances.
+            Track client events, payments, and balances.
           </p>
         </div>
 
@@ -516,7 +663,7 @@ export default function AdminEventsBudgetPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-gold text-bg-primary font-extrabold text-xs uppercase tracking-wider hover:bg-accent-warm shadow-md shadow-accent-gold/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Book New Event</span>
+            <span>Book Event</span>
           </button>
         </div>
       </div>
@@ -527,7 +674,7 @@ export default function AdminEventsBudgetPage() {
         <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              Total Events ({formatMonthName(selectedMonth)})
+              Total Events
             </span>
             <div className="w-8 h-8 rounded-lg bg-accent-gold/10 border border-accent-gold/20 text-accent-gold flex items-center justify-center">
               <Calendar className="w-4 h-4" />
@@ -545,11 +692,11 @@ export default function AdminEventsBudgetPage() {
           </div>
         </div>
 
-        {/* Card 2: Total Revenue Booked */}
+        {/* Card 2: Total Revenue */}
         <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              Total Revenue Booked
+              Total Revenue
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
@@ -559,7 +706,7 @@ export default function AdminEventsBudgetPage() {
             {formatPKR(metrics.totalRevenue)}
           </div>
           <div className="mt-3 text-[11px] text-text-muted">
-            Total deal value for filtered period
+            Total deal value
           </div>
         </div>
 
@@ -567,7 +714,7 @@ export default function AdminEventsBudgetPage() {
         <div className="bg-[#121212] rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-              Cash Received (Paid)
+              Cash Received
             </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
@@ -594,7 +741,7 @@ export default function AdminEventsBudgetPage() {
         <div className="bg-[#121212] rounded-2xl p-5 border border-amber-500/20 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-              Remaining (Market Balance)
+              Remaining Balance
             </span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
               <Clock className="w-4 h-4" />
@@ -604,12 +751,69 @@ export default function AdminEventsBudgetPage() {
             {formatPKR(metrics.totalRemaining)}
           </div>
           <div className="mt-3 text-[11px] text-amber-400/80 font-medium">
-            Pending collection from clients
+            Pending collection
           </div>
         </div>
       </div>
 
-      {/* FILTER & SEARCH TOOLBAR (CUSTOM LUXURY DROPDOWN, NO NATIVE OS BLUE POPUP) */}
+      {/* VIEW SWITCHER TABS: UPCOMING SCHEDULE vs BOOKINGS & BUDGET */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-2">
+        <div className="flex items-center gap-2 p-1 bg-[#141414] border border-white/10 rounded-xl w-fit">
+          <button
+            type="button"
+            onClick={() => setActiveTab("schedule")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === "schedule"
+                ? "bg-accent-gold text-bg-primary shadow-sm font-extrabold"
+                : "text-text-muted hover:text-white"
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" />
+            <span>Upcoming Schedule ({allShoots.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("bookings")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === "bookings"
+                ? "bg-accent-gold text-bg-primary shadow-sm font-extrabold"
+                : "text-text-muted hover:text-white"
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            <span>Bookings &amp; Budget ({events.length})</span>
+          </button>
+        </div>
+
+        {/* Schedule Sub-Filters (Visible in Schedule View) */}
+        {activeTab === "schedule" && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { id: "ALL", label: "All Dates" },
+              { id: "UPCOMING", label: "Upcoming" },
+              { id: "THIS_MONTH", label: "This Month" },
+              { id: "NEXT_MONTH", label: "Next Month" },
+              { id: "PAST", label: "Past" },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setScheduleTimeFilter(f.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
+                  scheduleTimeFilter === f.id
+                    ? "bg-accent-gold/15 border-accent-gold text-accent-gold font-bold"
+                    : "bg-[#141414] border-white/10 text-text-muted hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* FILTER & SEARCH TOOLBAR */}
       <div className="bg-[#121212] border border-white/10 p-4 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-lg">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -630,316 +834,503 @@ export default function AdminEventsBudgetPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Custom Luxury Month Selector (Replacing native browser select) */}
-          <div className="relative" ref={monthDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setMonthDropdownOpen(!monthDropdownOpen)}
-              className="flex items-center gap-2.5 bg-[#161616] border border-white/10 hover:border-accent-gold/40 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold transition-all cursor-pointer shadow-sm"
-            >
-              <Calendar className="w-3.5 h-3.5 text-accent-gold shrink-0" />
-              <span>{formatMonthName(selectedMonth)}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${
-                  monthDropdownOpen ? "rotate-180 text-accent-gold" : ""
-                }`}
-              />
-            </button>
-
-            {monthDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#161616] border border-white/15 rounded-xl shadow-2xl p-1.5 z-40 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedMonth("ALL");
-                    setMonthDropdownOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors text-left cursor-pointer ${
-                    selectedMonth === "ALL"
-                      ? "bg-accent-gold/15 text-accent-gold font-bold"
-                      : "text-text-muted hover:text-white hover:bg-white/5"
+        {/* Month Selector & Status Tabs for Bookings View */}
+        {activeTab === "bookings" && (
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Custom Luxury Month Selector */}
+            <div className="relative" ref={monthDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setMonthDropdownOpen(!monthDropdownOpen)}
+                className="flex items-center gap-2.5 bg-[#161616] border border-white/10 hover:border-accent-gold/40 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold transition-all cursor-pointer shadow-sm"
+              >
+                <Calendar className="w-3.5 h-3.5 text-accent-gold shrink-0" />
+                <span>{formatMonthName(selectedMonth)}</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${
+                    monthDropdownOpen ? "rotate-180 text-accent-gold" : ""
                   }`}
-                >
-                  <span>All Months</span>
-                  {selectedMonth === "ALL" && <Check className="w-3.5 h-3.5 text-accent-gold" />}
-                </button>
+                />
+              </button>
 
-                {availableMonths.map((ym) => (
+              {monthDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-[#161616] border border-white/15 rounded-xl shadow-2xl p-1.5 z-40 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
                   <button
-                    key={ym}
                     type="button"
                     onClick={() => {
-                      setSelectedMonth(ym);
+                      setSelectedMonth("ALL");
                       setMonthDropdownOpen(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors text-left cursor-pointer ${
-                      selectedMonth === ym
+                      selectedMonth === "ALL"
                         ? "bg-accent-gold/15 text-accent-gold font-bold"
                         : "text-text-muted hover:text-white hover:bg-white/5"
                     }`}
                   >
-                    <span>{formatMonthName(ym)}</span>
-                    {selectedMonth === ym && <Check className="w-3.5 h-3.5 text-accent-gold" />}
+                    <span>All Months</span>
+                    {selectedMonth === "ALL" && <Check className="w-3.5 h-3.5 text-accent-gold" />}
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Status Tabs */}
-          <div className="flex items-center bg-[#161616] border border-white/10 rounded-xl p-1 gap-1">
-            {[
-              { id: "ALL", label: "All" },
-              { id: "UNPAID", label: "Unpaid" },
-              { id: "PARTIALLY PAID", label: "Partial" },
-              { id: "FULLY PAID", label: "Paid" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setStatusFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  statusFilter === tab.id
-                    ? "bg-accent-gold text-bg-primary font-extrabold shadow-sm"
-                    : "text-text-muted hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+                  {availableMonths.map((ym) => (
+                    <button
+                      key={ym}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMonth(ym);
+                        setMonthDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors text-left cursor-pointer ${
+                        selectedMonth === ym
+                          ? "bg-accent-gold/15 text-accent-gold font-bold"
+                          : "text-text-muted hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <span>{formatMonthName(ym)}</span>
+                      {selectedMonth === ym && <Check className="w-3.5 h-3.5 text-accent-gold" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex items-center bg-[#161616] border border-white/10 rounded-xl p-1 gap-1">
+              {[
+                { id: "ALL", label: "All" },
+                { id: "UNPAID", label: "Unpaid" },
+                { id: "PARTIALLY PAID", label: "Partial" },
+                { id: "FULLY PAID", label: "Paid" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === tab.id
+                      ? "bg-accent-gold text-bg-primary font-extrabold shadow-sm"
+                      : "text-text-muted hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* EVENTS & PAYMENTS MAIN TABLE */}
-      <div className="bg-[#121212] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-              <CalendarCheck className="w-4 h-4 text-accent-gold" />
-              <span>Booked Client Events ({filteredEvents.length})</span>
-            </h2>
-          </div>
-          <span className="text-[11px] text-text-muted">
-            Viewing: <strong className="text-accent-gold">{formatMonthName(selectedMonth)}</strong>
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-24 text-text-muted gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-accent-gold" />
-            <span className="text-xs">Loading event records...</span>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="py-20 px-4 text-center flex flex-col items-center justify-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-accent-gold/10 border border-accent-gold/20 flex items-center justify-center text-accent-gold">
-              <CalendarCheck className="w-7 h-7" />
+      {/* ========================================================================= */}
+      {/* VIEW 1: UPCOMING SHOOT SCHEDULE TABLE (DATE-WISE TIMELINE) */}
+      {/* ========================================================================= */}
+      {activeTab === "schedule" && (
+        <div className="bg-[#121212] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
+            <div className="flex items-center gap-2.5">
+              <CalendarDays className="w-4 h-4 text-accent-gold" />
+              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Upcoming Shoot Dates &amp; Timeline ({filteredShoots.length})
+              </h2>
             </div>
-            <div>
-              <p className="text-base font-bold text-white">No Event Bookings Found</p>
-              <p className="text-xs text-text-muted mt-1 max-w-sm">
-                {searchQuery || selectedMonth !== "ALL" || statusFilter !== "ALL"
-                  ? "No bookings match your selected search or filter criteria."
-                  : "Your telemetry is clean and fresh. Click below to book an event or create an invoice with client details to record bookings."}
-              </p>
-            </div>
-            <button
-              onClick={() => setNewEventModalOpen(true)}
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-gold text-bg-primary font-extrabold text-xs uppercase tracking-wider hover:bg-accent-warm shadow-md transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Book First Event</span>
-            </button>
+            <span className="text-[11px] text-text-muted font-medium">
+              Sorted Chronologically by Date
+            </span>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
-                  <th className="px-5 py-3.5">Client &amp; Scope</th>
-                  <th className="px-5 py-3.5">Event Date</th>
-                  <th className="px-5 py-3.5 text-right">Deal Total</th>
-                  <th className="px-5 py-3.5 text-right">Paid</th>
-                  <th className="px-5 py-3.5 text-right">Remaining Due</th>
-                  <th className="px-5 py-3.5 text-center">Status</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredEvents.map((evt) => {
-                  const total = Number(evt.total_amount || 0);
-                  const paid = Number(evt.paid_amount || 0);
-                  const remaining = Math.max(0, total - paid);
-                  const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
-                  const isFullyPaid = remaining <= 0;
 
-                  return (
-                    <tr
-                      key={evt.id}
-                      className="hover:bg-white/[0.03] transition-colors"
-                    >
-                      {/* 1. Client & Scope */}
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-white text-[13.5px]">
-                              {evt.client_name}
-                            </span>
-                            {evt.invoice_no && (
-                              <span className="px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
-                                {evt.invoice_no}
+          {loading ? (
+            <div className="flex items-center justify-center py-24 text-text-muted gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-accent-gold" />
+              <span className="text-xs">Loading shoot schedule...</span>
+            </div>
+          ) : filteredShoots.length === 0 ? (
+            <div className="py-20 px-4 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-accent-gold/10 border border-accent-gold/20 flex items-center justify-center text-accent-gold">
+                <CalendarDays className="w-7 h-7" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-white">No Shoots Found</p>
+                <p className="text-xs text-text-muted mt-1 max-w-sm">
+                  {searchQuery || scheduleTimeFilter !== "ALL"
+                    ? "No shoots match your filter or search."
+                    : "No shoots scheduled yet. Create an invoice or book an event to see dates."}
+                </p>
+              </div>
+              <button
+                onClick={() => setNewEventModalOpen(true)}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-gold text-bg-primary font-extrabold text-xs uppercase tracking-wider hover:bg-accent-warm shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Book Event</span>
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
+                    <th className="px-5 py-3.5">Shoot Date</th>
+                    <th className="px-5 py-3.5">Client &amp; Invoice</th>
+                    <th className="px-5 py-3.5">Schedule / Day</th>
+                    <th className="px-5 py-3.5">Location</th>
+                    <th className="px-5 py-3.5 text-right">Balance Due</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredShoots.map((shoot) => {
+                    const rel = getRelativeDateInfo(shoot.shootDate);
+                    const isDue = shoot.remainingAmount > 0;
+
+                    return (
+                      <tr
+                        key={shoot.shootId}
+                        className="hover:bg-white/[0.03] transition-colors"
+                      >
+                        {/* 1. Shoot Date with Countdown Badge */}
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-white text-[13.5px] font-mono">
+                                {formatEventDate(shoot.shootDate)}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider border ${rel.color}`}
+                              >
+                                {rel.label}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 2. Client & Invoice */}
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-[13px]">
+                                {shoot.clientName}
+                              </span>
+                              {shoot.invoiceNo && (
+                                <span className="px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
+                                  {shoot.invoiceNo}
+                                </span>
+                              )}
+                            </div>
+                            {shoot.clientPhone && (
+                              <span className="text-[10px] text-text-muted/80 flex items-center gap-1 font-mono">
+                                <Phone className="w-2.5 h-2.5 text-accent-gold/60" />
+                                <span>{shoot.clientPhone}</span>
                               </span>
                             )}
                           </div>
+                        </td>
 
-                          {/* Service Type (No duplicate strings) */}
-                          <div className="flex items-center gap-2 text-xs text-text-muted">
-                            <Camera className="w-3 h-3 text-accent-gold/70 shrink-0" />
-                            <span>{evt.service_type || evt.event_title || "Photography Services"}</span>
+                        {/* 3. Schedule / Day */}
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-accent-gold text-xs">
+                              {shoot.dayLabel}
+                            </span>
+                            <span className="text-[11px] text-text-muted truncate max-w-xs">
+                              {shoot.scope}
+                            </span>
                           </div>
+                        </td>
 
-                          {/* Extra info if different */}
-                          {evt.event_title && evt.event_title !== evt.service_type && (
-                            <span className="text-[11px] text-text-muted/70 italic">
-                              {evt.event_title}
-                            </span>
-                          )}
+                        {/* 4. Location */}
+                        <td className="px-5 py-4 whitespace-nowrap text-text-muted text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3 text-text-muted/60" />
+                            <span>{shoot.location}</span>
+                          </div>
+                        </td>
 
-                          {evt.client_phone && (
-                            <span className="flex items-center gap-1 font-mono text-[10px] text-text-muted/80">
-                              <Phone className="w-2.5 h-2.5 text-accent-gold/60" />
-                              {evt.client_phone}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* 2. Event Date (Formatted Day Month Year) */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-white text-xs font-mono flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-accent-gold/70" />
-                            <span>{formatEventDate(evt.event_date)}</span>
-                          </span>
-                          <span className="text-[10px] text-text-muted flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-2.5 h-2.5 text-text-muted/60" />
-                            {evt.event_location || "Karachi, Pakistan"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* 3. Deal Total */}
-                      <td className="px-5 py-4 text-right font-extrabold text-white font-mono text-sm whitespace-nowrap">
-                        {formatPKR(total)}
-                      </td>
-
-                      {/* 4. Paid */}
-                      <td className="px-5 py-4 text-right whitespace-nowrap">
-                        <div className="flex flex-col items-end">
-                          <span className={`font-mono text-sm font-extrabold ${paid > 0 ? "text-emerald-400" : "text-text-muted"}`}>
-                            {formatPKR(paid)}
-                          </span>
-                          {paid > 0 && total > 0 && (
-                            <div className="w-16 h-1 bg-white/10 rounded-full mt-1.5 overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-400 rounded-full"
-                                style={{ width: `${percent}%` }}
-                              />
+                        {/* 5. Balance Due on Shoot */}
+                        <td className="px-5 py-4 text-right whitespace-nowrap font-bold">
+                          {isDue ? (
+                            <div className="flex flex-col items-end">
+                              <span className="text-amber-300 font-mono text-xs font-bold">
+                                {formatPKR(shoot.remainingAmount)}
+                              </span>
+                              <span className="text-[9.5px] text-rose-400 font-normal">
+                                Payment Pending
+                              </span>
                             </div>
+                          ) : (
+                            <span className="text-emerald-400 font-semibold text-xs inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Cleared</span>
+                            </span>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* 5. Remaining Due */}
-                      <td className="px-5 py-4 text-right whitespace-nowrap font-bold">
-                        {isFullyPaid ? (
-                          <span className="text-emerald-400 font-semibold text-xs inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Cleared</span>
-                          </span>
-                        ) : (
-                          <span className="text-amber-300 font-extrabold font-mono text-sm">
-                            {formatPKR(remaining)}
-                          </span>
-                        )}
-                      </td>
+                        {/* 6. Actions */}
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isDue && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPaymentModal(shoot.rawEvent)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 hover:bg-accent-gold hover:text-bg-primary font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                                title="Record payment for this booking"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                <span>+ Pay</span>
+                              </button>
+                            )}
 
-                      {/* 6. Status */}
-                      <td className="px-5 py-4 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            isFullyPaid
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                              : paid > 0
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                              : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isFullyPaid ? "bg-emerald-400" : paid > 0 ? "bg-amber-400" : "bg-rose-400"
-                            }`}
-                          />
-                          {evt.status || (isFullyPaid ? "FULLY PAID" : paid > 0 ? "PARTIALLY PAID" : "UNPAID")}
-                        </span>
-                      </td>
-
-                      {/* 7. Actions (Clean compact buttons) */}
-                      <td className="px-5 py-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {!isFullyPaid ? (
                             <button
                               type="button"
-                              onClick={() => handleOpenPaymentModal(evt)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 hover:bg-accent-gold hover:text-bg-primary font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-                              title="Record installment or balance payment"
+                              onClick={() => {
+                                setActiveEventForHistory(shoot.rawEvent);
+                                setHistoryModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                              title="View Booking Ledger"
                             >
-                              <CreditCard className="w-3 h-3" />
-                              <span>+ Pay</span>
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 2: BOOKINGS & BUDGET MAIN TABLE */}
+      {/* ========================================================================= */}
+      {activeTab === "bookings" && (
+        <div className="bg-[#121212] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
+            <div className="flex items-center gap-2.5">
+              <CalendarCheck className="w-4 h-4 text-accent-gold" />
+              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Booked Events ({filteredEvents.length})
+              </h2>
+            </div>
+            <span className="text-[11px] text-text-muted">
+              Viewing: <strong className="text-accent-gold">{formatMonthName(selectedMonth)}</strong>
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-24 text-text-muted gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-accent-gold" />
+              <span className="text-xs">Loading events...</span>
+            </div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="py-20 px-4 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-accent-gold/10 border border-accent-gold/20 flex items-center justify-center text-accent-gold">
+                <CalendarCheck className="w-7 h-7" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-white">No Events Found</p>
+                <p className="text-xs text-text-muted mt-1 max-w-sm">
+                  {searchQuery || selectedMonth !== "ALL" || statusFilter !== "ALL"
+                    ? "No bookings match your selected search or filter."
+                    : "No events recorded yet. Click below to book an event or create an invoice."}
+                </p>
+              </div>
+              <button
+                onClick={() => setNewEventModalOpen(true)}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-gold text-bg-primary font-extrabold text-xs uppercase tracking-wider hover:bg-accent-warm shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Book Event</span>
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
+                    <th className="px-5 py-3.5">Client &amp; Scope</th>
+                    <th className="px-5 py-3.5">Event Date</th>
+                    <th className="px-5 py-3.5 text-right">Total</th>
+                    <th className="px-5 py-3.5 text-right">Paid</th>
+                    <th className="px-5 py-3.5 text-right">Remaining</th>
+                    <th className="px-5 py-3.5 text-center">Status</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredEvents.map((evt) => {
+                    const total = Number(evt.total_amount || 0);
+                    const paid = Number(evt.paid_amount || 0);
+                    const remaining = Math.max(0, total - paid);
+                    const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                    const isFullyPaid = remaining <= 0;
+
+                    return (
+                      <tr
+                        key={evt.id}
+                        className="hover:bg-white/[0.03] transition-colors"
+                      >
+                        {/* 1. Client & Scope */}
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-white text-[13.5px]">
+                                {evt.client_name}
+                              </span>
+                              {evt.invoice_no && (
+                                <span className="px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
+                                  {evt.invoice_no}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Service Type (No duplicate strings) */}
+                            <div className="flex items-center gap-2 text-xs text-text-muted">
+                              <Camera className="w-3 h-3 text-accent-gold/70 shrink-0" />
+                              <span>{evt.service_type || evt.event_title || "Photography Services"}</span>
+                            </div>
+
+                            {evt.event_title && evt.event_title !== evt.service_type && (
+                              <span className="text-[11px] text-text-muted/70 italic">
+                                {evt.event_title}
+                              </span>
+                            )}
+
+                            {evt.client_phone && (
+                              <span className="flex items-center gap-1 font-mono text-[10px] text-text-muted/80">
+                                <Phone className="w-2.5 h-2.5 text-accent-gold/60" />
+                                {evt.client_phone}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 2. Event Date (Formatted Day Month Year) */}
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-white text-xs font-mono flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3 text-accent-gold/70" />
+                              <span>{formatEventDate(evt.event_date)}</span>
+                            </span>
+                            <span className="text-[10px] text-text-muted flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-2.5 h-2.5 text-text-muted/60" />
+                              {evt.event_location || "Karachi, Pakistan"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. Deal Total */}
+                        <td className="px-5 py-4 text-right font-extrabold text-white font-mono text-sm whitespace-nowrap">
+                          {formatPKR(total)}
+                        </td>
+
+                        {/* 4. Paid */}
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <div className="flex flex-col items-end">
+                            <span className={`font-mono text-sm font-extrabold ${paid > 0 ? "text-emerald-400" : "text-text-muted"}`}>
+                              {formatPKR(paid)}
+                            </span>
+                            {paid > 0 && total > 0 && (
+                              <div className="w-16 h-1 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-400 rounded-full"
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 5. Remaining Due */}
+                        <td className="px-5 py-4 text-right whitespace-nowrap font-bold">
+                          {isFullyPaid ? (
+                            <span className="text-emerald-400 font-semibold text-xs inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Cleared</span>
+                            </span>
                           ) : (
+                            <span className="text-amber-300 font-extrabold font-mono text-sm">
+                              {formatPKR(remaining)}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* 6. Status */}
+                        <td className="px-5 py-4 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isFullyPaid
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : paid > 0
+                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                                : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isFullyPaid ? "bg-emerald-400" : paid > 0 ? "bg-amber-400" : "bg-rose-400"
+                              }`}
+                            />
+                            {evt.status || (isFullyPaid ? "FULLY PAID" : paid > 0 ? "PARTIALLY PAID" : "UNPAID")}
+                          </span>
+                        </td>
+
+                        {/* 7. Actions */}
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!isFullyPaid ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPaymentModal(evt)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 hover:bg-accent-gold hover:text-bg-primary font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                                title="Record installment or balance payment"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                <span>+ Pay</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveEventForHistory(evt);
+                                  setHistoryModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
+                              >
+                                <span>Ledger</span>
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => {
                                 setActiveEventForHistory(evt);
                                 setHistoryModalOpen(true);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
+                              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                              title="View Payment Logs & Installments"
                             >
-                              <span>Ledger</span>
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
-                          )}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveEventForHistory(evt);
-                              setHistoryModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                            title="View Payment Logs & Installments"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteEvent(evt.id, evt.client_name)}
-                            className="p-1.5 rounded-lg bg-rose-950/20 border border-rose-500/20 text-rose-400 hover:bg-rose-900/40 transition-all cursor-pointer"
-                            title="Delete Event"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEvent(evt.id, evt.client_name)}
+                              className="p-1.5 rounded-lg bg-rose-950/20 border border-rose-500/20 text-rose-400 hover:bg-rose-900/40 transition-all cursor-pointer"
+                              title="Delete Event"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODAL 1: RECORD PAYMENT */}
@@ -955,7 +1346,7 @@ export default function AdminEventsBudgetPage() {
                   <span>Record Payment</span>
                 </h3>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Log installment or remaining balance without creating duplicate invoices
+                  Log installment or balance payment.
                 </p>
               </div>
               <button
@@ -1061,17 +1452,28 @@ export default function AdminEventsBudgetPage() {
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
                     Payment Method
                   </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer"
-                  >
-                    <option value="Cash" className="bg-[#181818]">Cash on Hand</option>
-                    <option value="Bank Transfer" className="bg-[#181818]">Bank Transfer</option>
-                    <option value="JazzCash / EasyPaisa" className="bg-[#181818]">JazzCash / EasyPaisa</option>
-                    <option value="Cheque" className="bg-[#181818]">Cheque</option>
-                    <option value="Online Payment" className="bg-[#181818]">Online Payment</option>
-                  </select>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {[
+                      { key: "Cash", label: "Cash" },
+                      { key: "Bank Transfer", label: "Bank" },
+                      { key: "JazzCash / EasyPaisa", label: "Jazz/Easy" },
+                      { key: "Online Payment", label: "Online" },
+                      { key: "Cheque", label: "Cheque" },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        type="button"
+                        onClick={() => setPaymentMethod(m.key)}
+                        className={`px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                          paymentMethod === m.key
+                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
+                            : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -1120,7 +1522,7 @@ export default function AdminEventsBudgetPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: BOOK NEW EVENT */}
+      {/* MODAL 2: BOOK EVENT */}
       {/* ========================================================================= */}
       {newEventModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1130,10 +1532,10 @@ export default function AdminEventsBudgetPage() {
               <div>
                 <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                   <CalendarCheck className="w-4 h-4 text-accent-gold" />
-                  <span>Book New Client Event</span>
+                  <span>Book Event</span>
                 </h3>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Record new photography &amp; videography assignment
+                  Enter client booking details.
                 </p>
               </div>
               <button
@@ -1191,23 +1593,34 @@ export default function AdminEventsBudgetPage() {
                 </div>
               </div>
 
-              {/* Service & Date */}
+              {/* Service Scope */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
                     Service Scope
                   </label>
-                  <select
-                    value={newEventData.service_type}
-                    onChange={(e) => setNewEventData({ ...newEventData, service_type: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer"
-                  >
-                    <option value="Photography & Videography" className="bg-[#181818]">Photography & Videography</option>
-                    <option value="Photography Services" className="bg-[#181818]">Photography Only</option>
-                    <option value="Videography Services" className="bg-[#181818]">Cinematic Videography Only</option>
-                    <option value="Drone Cinematography" className="bg-[#181818]">Drone Cinematography</option>
-                    <option value="Complete Wedding Coverage & Luxury Album" className="bg-[#181818]">Complete Package + Album</option>
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {[
+                      "Photography & Videography",
+                      "Photography Services",
+                      "Cinematic Videography",
+                      "Drone Cinematography",
+                      "Complete Wedding Coverage",
+                    ].map((srv) => (
+                      <button
+                        key={srv}
+                        type="button"
+                        onClick={() => setNewEventData({ ...newEventData, service_type: srv })}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left truncate ${
+                          newEventData.service_type === srv
+                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
+                            : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
+                        }`}
+                      >
+                        {srv}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
@@ -1223,41 +1636,74 @@ export default function AdminEventsBudgetPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Event Date
+              {/* Multi-Day Dates Selector */}
+              <div className="space-y-2 p-3 bg-[#181818] border border-white/10 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    <span>Shoot Days ({eventDaysCount})</span>
                   </label>
-                  <input
-                    type="date"
-                    required
-                    value={newEventData.event_date}
-                    onClick={(e) => {
-                      try {
-                        if (typeof e.target.showPicker === "function") e.target.showPicker();
-                      } catch {}
-                    }}
-                    onFocus={(e) => {
-                      try {
-                        if (typeof e.target.showPicker === "function") e.target.showPicker();
-                      } catch {}
-                    }}
-                    onChange={(e) => setNewEventData({ ...newEventData, event_date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                  />
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleDaysCountChange(d)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          eventDaysCount === d
+                            ? "bg-accent-gold text-bg-primary"
+                            : "bg-white/5 text-text-muted hover:text-white"
+                        }`}
+                      >
+                        {d} {d === 1 ? "Day" : "Days"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Location / Venue
-                  </label>
-                  <input
-                    type="text"
-                    value={newEventData.event_location}
-                    onChange={(e) => setNewEventData({ ...newEventData, event_location: e.target.value })}
-                    placeholder="Karachi, Pakistan"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {multiEventDates.map((dVal, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <span className="text-[9.5px] text-text-muted font-semibold uppercase">
+                        Day {idx + 1} Shoot Date:
+                      </span>
+                      <input
+                        type="date"
+                        required
+                        value={dVal || ""}
+                        onClick={(e) => {
+                          try {
+                            if (typeof e.target.showPicker === "function") e.target.showPicker();
+                          } catch {}
+                        }}
+                        onFocus={(e) => {
+                          try {
+                            if (typeof e.target.showPicker === "function") e.target.showPicker();
+                          } catch {}
+                        }}
+                        onChange={(e) => {
+                          const updated = [...multiEventDates];
+                          updated[idx] = e.target.value;
+                          setMultiEventDates(updated);
+                        }}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#121212] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                      />
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                  Location / Venue
+                </label>
+                <input
+                  type="text"
+                  value={newEventData.event_location}
+                  onChange={(e) => setNewEventData({ ...newEventData, event_location: e.target.value })}
+                  placeholder="Karachi, Pakistan"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
+                />
               </div>
 
               {/* Pricing & Advance */}
@@ -1316,17 +1762,28 @@ export default function AdminEventsBudgetPage() {
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
                     Advance Payment Method
                   </label>
-                  <select
-                    value={newEventData.payment_method}
-                    onChange={(e) => setNewEventData({ ...newEventData, payment_method: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer"
-                  >
-                    <option value="Cash" className="bg-[#181818]">Cash on Hand</option>
-                    <option value="Bank Transfer" className="bg-[#181818]">Bank Transfer</option>
-                    <option value="JazzCash / EasyPaisa" className="bg-[#181818]">JazzCash / EasyPaisa</option>
-                    <option value="Cheque" className="bg-[#181818]">Cheque</option>
-                    <option value="Online Payment" className="bg-[#181818]">Online Payment</option>
-                  </select>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {[
+                      { key: "Cash", label: "Cash" },
+                      { key: "Bank Transfer", label: "Bank" },
+                      { key: "JazzCash / EasyPaisa", label: "Jazz/Easy" },
+                      { key: "Online Payment", label: "Online" },
+                      { key: "Cheque", label: "Cheque" },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        type="button"
+                        onClick={() => setNewEventData({ ...newEventData, payment_method: m.key })}
+                        className={`px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                          newEventData.payment_method === m.key
+                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
+                            : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -1401,7 +1858,7 @@ export default function AdminEventsBudgetPage() {
                   <span>Payment Ledger</span>
                 </h3>
                 <p className="text-xs text-text-muted mt-0.5">
-                  All recorded installments &amp; cash collections
+                  Recorded installment history.
                 </p>
               </div>
               <button

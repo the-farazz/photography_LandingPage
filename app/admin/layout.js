@@ -105,7 +105,7 @@ export default function AdminLayout({ children }) {
       isActive: pathname === "/admin",
     },
     {
-      label: "Event Budget & Payments",
+      label: "Event Budget",
       href: "/admin/events",
       icon: CalendarCheck,
       badge: "Finance",
@@ -168,9 +168,9 @@ export default function AdminLayout({ children }) {
                     : "text-text-muted hover:text-text-primary hover:bg-white/5"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${item.isActive ? "text-bg-primary" : "text-accent-gold"}`} />
-                  <span>{item.label}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 ${item.isActive ? "text-bg-primary" : "text-accent-gold"}`} />
+                  <span className="truncate whitespace-nowrap">{item.label}</span>
                 </div>
 
               </Link>
