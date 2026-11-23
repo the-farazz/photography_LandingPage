@@ -24,7 +24,6 @@ import {
   Activity,
   FileText,
   Calendar,
-  CalendarCheck,
   Plus,
   ChevronDown,
   BookmarkCheck,
@@ -609,16 +608,6 @@ FS Visuals Karachi | +92 327 3129464`;
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-wrap">
-            {/* View Events Budget Link */}
-            <Link
-              href="/admin/events"
-              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-xs font-semibold bg-accent-gold/10 border border-accent-gold/30 text-accent-gold hover:bg-accent-gold/20 transition-all uppercase tracking-wider rounded-xl cursor-pointer"
-              title="Open Events Budget"
-            >
-              <CalendarCheck className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Event Budget</span>
-            </Link>
-
             {/* Save Invoice Button (Explicit Save without downloading) */}
             <button
               type="button"
@@ -640,31 +629,6 @@ FS Visuals Karachi | +92 327 3129464`;
               )}
               <span className="hidden sm:inline">{syncedSuccess ? "Saved!" : "Save Invoice"}</span>
               <span className="sm:hidden">Save</span>
-            </button>
-
-            {/* WhatsApp Text */}
-            <button
-              onClick={handleCopyWhatsAppSummary}
-              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-white/5 border border-white/10 text-text-muted hover:text-white transition-colors uppercase tracking-wider rounded-xl"
-              title="Copy WhatsApp text"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden lg:inline">{copied ? "Copied!" : "WhatsApp Text"}</span>
-            </button>
-
-            {/* Download Image Button */}
-            <button
-              onClick={handleDownloadPNG}
-              disabled={downloadingPng || downloadingPdf}
-              className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold bg-[#161616] border border-white/20 text-text-primary hover:border-accent-gold hover:text-accent-gold transition-all uppercase tracking-wider disabled:opacity-50 rounded-xl"
-              title="Download Invoice as Image"
-            >
-              {downloadingPng ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <ImageIcon className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden lg:inline">{downloadingPng ? "Saving..." : "Save Image"}</span>
             </button>
 
             {/* Primary 1-Click Download PDF Button */}
@@ -872,57 +836,57 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
 
             {/* Multi-Select Service Chips (Photography, Videography, Drone, Album) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => handleToggleService("photography")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.photography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
                     : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
                 <Camera className="w-4 h-4 shrink-0" />
-                <span>Photography</span>
+                <span className="truncate">Photography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("videography")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.videography
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
                     : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
                 <Film className="w-4 h-4 shrink-0" />
-                <span>Videography</span>
+                <span className="truncate">Videography</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("drone")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.drone
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
                     : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
                 <Compass className="w-4 h-4 shrink-0" />
-                <span>Drone</span>
+                <span className="truncate">Drone</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleToggleService("album")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold border transition-all text-center leading-tight rounded-xl cursor-pointer ${
                   services.album
                     ? "bg-accent-gold text-bg-primary border-accent-gold shadow-md font-bold"
                     : "bg-[#161616] border-white/10 text-text-muted hover:border-white/30 hover:text-white"
                 }`}
               >
                 <BookOpen className="w-4 h-4 shrink-0" />
-                <span>Album</span>
+                <span className="truncate">Album</span>
               </button>
             </div>
 
@@ -1124,26 +1088,35 @@ FS Visuals Karachi | +92 327 3129464`;
             </div>
 
             {/* Computed Remaining Balance Box */}
-            <div className="p-4 bg-[#161616] border border-accent-gold/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-text-muted block">
-                  Remaining Balance Due:
-                </span>
-                <span className="text-xl font-bold text-accent-gold font-mono">
-                  PKR {remainingBalance.toLocaleString()}
-                </span>
-                <span className="text-[10px] font-semibold block mt-0.5">
+            <div className="p-4 bg-[#161616] border border-accent-gold/30 rounded-xl space-y-3 shadow-lg">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-text-muted block">
+                    Remaining Balance Due
+                  </span>
+                  <span className="text-xl font-bold text-accent-gold font-mono">
+                    PKR {remainingBalance.toLocaleString()}
+                  </span>
+                </div>
+                <div>
                   {formData.status === "UNPAID" ? (
-                    <span className="text-rose-400 font-bold">100% Outstanding (All Unpaid)</span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] bg-rose-500/15 border border-rose-500/30 text-rose-300 font-bold">
+                      100% Unpaid
+                    </span>
                   ) : formData.status === "PAID" ? (
-                    <span className="text-emerald-400 font-bold">Paid in Full (0 Due)</span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
+                      Paid in Full
+                    </span>
                   ) : (
-                    <span className="text-amber-400 font-bold">Partial Balance Pending</span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
+                      Partial Due
+                    </span>
                   )}
-                </span>
+                </div>
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto">
+              {/* Quick Preset Buttons (Full Width 3 Equal Columns) */}
+              <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-white/5">
                 <button
                   type="button"
                   onClick={() =>
@@ -1153,10 +1126,10 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "UNPAID",
                     })
                   }
-                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                  className={`text-center text-[11px] font-bold py-2 px-2 rounded-xl border transition-all cursor-pointer ${
                     formData.status === "UNPAID"
-                      ? "bg-rose-500/20 border-rose-500/40 text-rose-300"
-                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                      ? "bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-sm"
+                      : "bg-[#121212] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
                   }`}
                 >
                   All Unpaid
@@ -1170,10 +1143,10 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "PARTIALLY PAID",
                     })
                   }
-                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                  className={`text-center text-[11px] font-bold py-2 px-2 rounded-xl border transition-all cursor-pointer ${
                     formData.status === "PARTIALLY PAID"
-                      ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm"
+                      : "bg-[#121212] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
                   }`}
                 >
                   50% Adv
@@ -1187,10 +1160,10 @@ FS Visuals Karachi | +92 327 3129464`;
                       status: "PAID",
                     })
                   }
-                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                  className={`text-center text-[11px] font-bold py-2 px-2 rounded-xl border transition-all cursor-pointer ${
                     formData.status === "PAID"
-                      ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                      : "bg-white/5 border-white/10 text-text-muted hover:text-white"
+                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm"
+                      : "bg-[#121212] border-white/10 text-text-muted hover:border-white/25 hover:text-white"
                   }`}
                 >
                   Full Paid

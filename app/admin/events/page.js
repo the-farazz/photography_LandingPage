@@ -450,6 +450,7 @@ export default function AdminEventsBudgetPage() {
           shootDate: dStr,
           dayIndex: idx + 1,
           totalDays: dates.length,
+          allDates: dates,
           dayLabel: dates.length > 1 ? `Day ${idx + 1} of ${dates.length}` : (notes.includes("Duration:") ? notes.match(/Duration: ([^|]+)/)?.[1]?.trim() || "1 Day" : "1 Day"),
           scope: ev.service_type || ev.event_title || "Photography Services",
           eventTitle: ev.event_title,
@@ -504,38 +505,6 @@ export default function AdminEventsBudgetPage() {
       return true;
     });
   }, [allShoots, scheduleTimeFilter, searchQuery]);
-
-  // Compute countdown / relative label for each shoot date
-  const getRelativeDateInfo = (dateStr) => {
-    if (!dateStr) return { label: "TBD", color: "text-text-muted bg-white/5 border-white/10" };
-    try {
-      const target = new Date(dateStr + (dateStr.includes("T") ? "" : "T00:00:00"));
-      if (isNaN(target.getTime())) return { label: dateStr, color: "text-text-muted bg-white/5 border-white/10" };
-
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      target.setHours(0, 0, 0, 0);
-
-      const diffTime = target.getTime() - now.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 0) {
-        return { label: "Today", color: "text-emerald-300 bg-emerald-950/80 border-emerald-500/50 font-extrabold animate-pulse" };
-      } else if (diffDays === 1) {
-        return { label: "Tomorrow", color: "text-amber-300 bg-amber-950/80 border-amber-500/50 font-bold" };
-      } else if (diffDays > 1 && diffDays <= 7) {
-        return { label: `In ${diffDays} Days`, color: "text-accent-gold bg-accent-gold/15 border-accent-gold/40 font-bold" };
-      } else if (diffDays > 7 && diffDays <= 30) {
-        return { label: `In ${diffDays} Days`, color: "text-blue-300 bg-blue-950/50 border-blue-500/30 font-semibold" };
-      } else if (diffDays > 30) {
-        return { label: "Next Month", color: "text-purple-300 bg-purple-950/40 border-purple-500/30" };
-      } else {
-        return { label: "Completed", color: "text-text-muted/60 bg-white/5 border-white/5" };
-      }
-    } catch {
-      return { label: dateStr, color: "text-text-muted bg-white/5 border-white/10" };
-    }
-  };
 
   const metrics = useMemo(() => {
     let totalRevenue = 0;
@@ -1129,14 +1098,12 @@ export default function AdminEventsBudgetPage() {
                     <th className="px-5 py-3.5">Shoot Date</th>
                     <th className="px-5 py-3.5">Client &amp; Contact</th>
                     <th className="px-5 py-3.5">Event &amp; Scope</th>
-                    <th className="px-5 py-3.5">Venue / Location</th>
                     <th className="px-5 py-3.5">Shoot Status</th>
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredShoots.map((shoot) => {
-                    const rel = getRelativeDateInfo(shoot.shootDate);
                     const dateObj = formatEventDateWithDay(shoot.shootDate);
                     const shootStatus = getShootStatus(shoot.shootDate);
 
@@ -1145,19 +1112,12 @@ export default function AdminEventsBudgetPage() {
                         key={shoot.shootId}
                         className="hover:bg-white/[0.03] transition-colors"
                       >
-                        {/* 1. Shoot Date with Day of Week & Countdown Badge */}
+                        {/* 1. Shoot Date with Day of Week */}
                         <td className="px-5 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-white text-[13.5px] font-mono">
-                                {dateObj.date}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider border ${rel.color}`}
-                              >
-                                {rel.label}
-                              </span>
-                            </div>
+                            <span className="font-extrabold text-white text-[13.5px] font-mono">
+                              {dateObj.date}
+                            </span>
                             {dateObj.weekday && (
                               <span className="text-[11px] text-accent-gold/80 font-medium">
                                 {dateObj.weekday}
@@ -1166,19 +1126,12 @@ export default function AdminEventsBudgetPage() {
                           </div>
                         </td>
 
-                        {/* 2. Client Name, Invoice & Contact / WhatsApp */}
+                        {/* 2. Client Name & Contact / WhatsApp */}
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-white text-[13.5px]">
-                                {shoot.clientName}
-                              </span>
-                              {shoot.invoiceNo && (
-                                <span className="px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
-                                  {shoot.invoiceNo}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-bold text-white text-[13.5px]">
+                              {shoot.clientName}
+                            </span>
                             {shoot.clientPhone ? (
                               <div className="flex items-center gap-2">
                                 <a
@@ -1220,15 +1173,7 @@ export default function AdminEventsBudgetPage() {
                           </div>
                         </td>
 
-                        {/* 4. Venue / Location */}
-                        <td className="px-5 py-4 whitespace-nowrap text-text-muted text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-accent-gold/70 shrink-0" />
-                            <span className="text-white/90 font-medium">{shoot.location}</span>
-                          </div>
-                        </td>
-
-                        {/* 5. Shoot Status */}
+                        {/* 4. Shoot Status */}
                         <td className="px-5 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-full text-[10px] border ${shootStatus.color}`}>
                             {shootStatus.label}
@@ -1335,16 +1280,9 @@ export default function AdminEventsBudgetPage() {
                         {/* 1. Client & Scope */}
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-white text-[13.5px]">
-                                {evt.client_name}
-                              </span>
-                              {evt.invoice_no && (
-                                <span className="px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
-                                  {evt.invoice_no}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-bold text-white text-[13.5px]">
+                              {evt.client_name}
+                            </span>
 
                             {/* Service Type (No duplicate strings) */}
                             <div className="flex items-center gap-2 text-xs text-text-muted">
@@ -2182,11 +2120,6 @@ export default function AdminEventsBudgetPage() {
                   <div className="text-sm font-bold text-white">
                     {activeShootForDetails.clientName}
                   </div>
-                  {activeShootForDetails.invoiceNo && (
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
-                      {activeShootForDetails.invoiceNo}
-                    </span>
-                  )}
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-[10px] border ${getShootStatus(activeShootForDetails.shootDate).color}`}>
                   {getShootStatus(activeShootForDetails.shootDate).label}
@@ -2205,6 +2138,13 @@ export default function AdminEventsBudgetPage() {
                     <MessageCircle className="w-3.5 h-3.5" />
                     <span>{activeShootForDetails.clientPhone}</span>
                   </a>
+                </div>
+              )}
+
+              {activeShootForDetails.clientEmail && (
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+                  <span className="text-text-muted">Email:</span>
+                  <span className="text-white font-mono">{activeShootForDetails.clientEmail}</span>
                 </div>
               )}
             </div>
@@ -2228,6 +2168,68 @@ export default function AdminEventsBudgetPage() {
                 </span>
               </div>
 
+              {/* Complete All-Days Shoot Schedule for this Client */}
+              {Array.isArray(activeShootForDetails.allDates) && activeShootForDetails.allDates.length > 1 && (
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                      All Event Shoot Dates ({activeShootForDetails.allDates.length} Days Total)
+                    </span>
+                    <span className="text-[10px] text-accent-gold font-bold">
+                      Multi-Day Event
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 pt-0.5">
+                    {activeShootForDetails.allDates.map((dStr, idx) => {
+                      const dObj = formatEventDateWithDay(dStr);
+                      const isSelected = (idx + 1) === activeShootForDetails.dayIndex;
+                      const st = getShootStatus(dStr);
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                            isSelected
+                              ? "bg-accent-gold/15 border-accent-gold/50 text-white shadow-sm"
+                              : "bg-[#141414] border-white/5 text-text-muted"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              isSelected
+                                ? "bg-accent-gold text-bg-primary font-extrabold"
+                                : "bg-white/5 text-text-muted border border-white/10"
+                            }`}>
+                              Day {idx + 1}
+                            </span>
+                            <div>
+                              <span className="text-xs font-mono font-bold text-white block">
+                                {dObj.date}
+                              </span>
+                              <span className="text-[10px] text-text-muted">
+                                {dObj.weekday}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] border ${st.color}`}>
+                              {st.label}
+                            </span>
+                            {isSelected && (
+                              <span className="text-[10px] font-bold text-accent-gold">
+                                &bull; Current
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
                   Location / Venue
@@ -2247,6 +2249,25 @@ export default function AdminEventsBudgetPage() {
                   <span>{activeShootForDetails.scope}</span>
                 </div>
               </div>
+
+              {/* Special Notes & Instructions if any */}
+              {(() => {
+                const cleanNotes = (activeShootForDetails.notes || "")
+                  .replace(/\[DATES:[^\]]+\]/g, "")
+                  .replace(/Duration:\s*[^|]+(\|)?/g, "")
+                  .trim();
+                if (!cleanNotes) return null;
+                return (
+                  <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                      Special Notes / Instructions
+                    </span>
+                    <p className="text-xs text-white/90 leading-relaxed whitespace-pre-wrap">
+                      {cleanNotes}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Footer */}
