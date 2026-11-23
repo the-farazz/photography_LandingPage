@@ -83,6 +83,10 @@ export default function AdminEventsBudgetPage() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [activeEventForHistory, setActiveEventForHistory] = useState(null);
 
+  // Shoot Details Modal state (Logistics & Event Info, Zero Financial Overload)
+  const [shootDetailsModalOpen, setShootDetailsModalOpen] = useState(false);
+  const [activeShootForDetails, setActiveShootForDetails] = useState(null);
+
   // Toast notification state
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -440,6 +444,7 @@ export default function AdminEventsBudgetPage() {
           shootId: `${ev.id}_${idx}`,
           eventId: ev.id,
           clientName: ev.client_name,
+          clientEmail: ev.client_email,
           invoiceNo: ev.invoice_no,
           clientPhone: ev.client_phone,
           shootDate: dStr,
@@ -447,7 +452,9 @@ export default function AdminEventsBudgetPage() {
           totalDays: dates.length,
           dayLabel: dates.length > 1 ? `Day ${idx + 1} of ${dates.length}` : (notes.includes("Duration:") ? notes.match(/Duration: ([^|]+)/)?.[1]?.trim() || "1 Day" : "1 Day"),
           scope: ev.service_type || ev.event_title || "Photography Services",
+          eventTitle: ev.event_title,
           location: ev.event_location || "Karachi, Pakistan",
+          notes: notes,
           totalAmount: total,
           paidAmount: paid,
           remainingAmount: remaining,
@@ -577,6 +584,83 @@ export default function AdminEventsBudgetPage() {
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
+  const scheduleMetrics = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+
+    let upcomingCount = 0;
+    let todayCount = 0;
+    let thisMonthCount = 0;
+    let nextMonthCount = 0;
+
+    allShoots.forEach((s) => {
+      if (s.shootDate >= todayStr) {
+        upcomingCount++;
+      }
+      if (s.shootDate === todayStr) {
+        todayCount++;
+      }
+      if (s.shootDate) {
+        const d = new Date(s.shootDate + (s.shootDate.includes("T") ? "" : "T00:00:00"));
+        if (!isNaN(d.getTime())) {
+          if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+            thisMonthCount++;
+          } else if (
+            (d.getFullYear() === curYear && d.getMonth() === curMonth + 1) ||
+            (curMonth === 11 && d.getFullYear() === curYear + 1 && d.getMonth() === 0)
+          ) {
+            nextMonthCount++;
+          }
+        }
+      }
+    });
+
+    return {
+      totalShoots: allShoots.length,
+      upcomingCount,
+      todayCount,
+      thisMonthCount,
+      nextMonthCount,
+    };
+  }, [allShoots]);
+
+  const formatEventDateWithDay = (dateStr) => {
+    if (!dateStr) return { date: "TBD", weekday: "" };
+    try {
+      const d = new Date(dateStr + (dateStr.includes("T") ? "" : "T00:00:00"));
+      if (isNaN(d.getTime())) return { date: dateStr, weekday: "" };
+      const day = d.getDate();
+      const month = d.toLocaleDateString("en-US", { month: "short" });
+      const year = d.getFullYear();
+      const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+      return { date: `${day} ${month} ${year}`, weekday };
+    } catch {
+      return { date: dateStr, weekday: "" };
+    }
+  };
+
+  const getShootStatus = (dateStr) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (dateStr === todayStr) {
+      return {
+        label: "Shooting Today",
+        color: "text-emerald-300 bg-emerald-950/80 border-emerald-500/50 font-extrabold animate-pulse",
+      };
+    } else if (dateStr > todayStr) {
+      return {
+        label: "Scheduled",
+        color: "text-sky-300 bg-sky-950/50 border-sky-500/40 font-semibold",
+      };
+    } else {
+      return {
+        label: "Completed",
+        color: "text-text-muted/70 bg-white/5 border-white/10",
+      };
+    }
+  };
+
   // Format event date as Day Month Year (e.g. 12 Dec 2026)
   const formatEventDate = (dateStr) => {
     if (!dateStr) return "TBD";
@@ -668,93 +752,169 @@ export default function AdminEventsBudgetPage() {
         </div>
       </div>
 
-      {/* 4 TELEMETRY METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Events */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              Total Events
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-accent-gold/10 border border-accent-gold/20 text-accent-gold flex items-center justify-center">
-              <Calendar className="w-4 h-4" />
+      {/* TELEMETRY METRIC CARDS (Context-Aware: Schedule Metrics vs Financial Metrics) */}
+      {activeTab === "schedule" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Upcoming Shoots */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Upcoming Shoots
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-accent-gold/10 border border-accent-gold/20 text-accent-gold flex items-center justify-center">
+                <CalendarDays className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {scheduleMetrics.upcomingCount}
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold">
+              <span>{scheduleMetrics.todayCount} Shooting Today</span>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-            {metrics.totalEvents}
-          </div>
-          <div className="mt-3 flex items-center gap-2 text-[11px] text-text-muted">
-            <span className="text-emerald-400 font-bold">{metrics.fullyPaidCount} Paid</span>
-            <span>&bull;</span>
-            <span className="text-amber-400 font-bold">{metrics.partialCount} Partial</span>
-            <span>&bull;</span>
-            <span className="text-rose-400 font-bold">{metrics.unpaidCount} Due</span>
-          </div>
-        </div>
 
-        {/* Card 2: Total Revenue */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              Total Revenue
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
+          {/* Card 2: Shoots This Month */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                This Month
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {scheduleMetrics.thisMonthCount}
+            </div>
+            <div className="mt-3 text-[11px] text-text-muted">
+              Scheduled this month
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono truncate">
-            {formatPKR(metrics.totalRevenue)}
-          </div>
-          <div className="mt-3 text-[11px] text-text-muted">
-            Total deal value
-          </div>
-        </div>
 
-        {/* Card 3: Cash Received */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-              Cash Received
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
+          {/* Card 3: Next Month */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Next Month
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {scheduleMetrics.nextMonthCount}
+            </div>
+            <div className="mt-3 text-[11px] text-text-muted">
+              Upcoming next month
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono truncate">
-            {formatPKR(metrics.totalPaid)}
-          </div>
-          <div className="mt-2.5">
-            <div className="flex justify-between text-[10px] text-text-muted font-bold mb-1">
-              <span>Collection Rate</span>
-              <span className="text-emerald-400">{metrics.collectionRate}%</span>
-            </div>
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, metrics.collectionRate)}%` }}
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Card 4: Remaining Due */}
-        <div className="bg-[#121212] rounded-2xl p-5 border border-amber-500/20 relative overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-              Remaining Balance
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+          {/* Card 4: Total Booked Days */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Total Shoot Dates
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <Camera className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {allShoots.length}
+            </div>
+            <div className="mt-3 text-[11px] text-text-muted">
+              Total scheduled shoot days
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono truncate">
-            {formatPKR(metrics.totalRemaining)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Total Bookings */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Total Bookings
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-accent-gold/10 border border-accent-gold/20 text-accent-gold flex items-center justify-center">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {metrics.totalEvents}
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-text-muted">
+              <span className="text-emerald-400 font-bold">{metrics.fullyPaidCount} Paid</span>
+              <span>&bull;</span>
+              <span className="text-amber-400 font-bold">{metrics.partialCount} Partial</span>
+              <span>&bull;</span>
+              <span className="text-rose-400 font-bold">{metrics.unpaidCount} Due</span>
+            </div>
           </div>
-          <div className="mt-3 text-[11px] text-amber-400/80 font-medium">
-            Pending collection
+
+          {/* Card 2: Total Revenue */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-white/10 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Total Revenue
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono truncate">
+              {formatPKR(metrics.totalRevenue)}
+            </div>
+            <div className="mt-3 text-[11px] text-text-muted">
+              Total deal value
+            </div>
+          </div>
+
+          {/* Card 3: Cash Received */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                Cash Received
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono truncate">
+              {formatPKR(metrics.totalPaid)}
+            </div>
+            <div className="mt-2.5">
+              <div className="flex justify-between text-[10px] text-text-muted font-bold mb-1">
+                <span>Collection Rate</span>
+                <span className="text-emerald-400">{metrics.collectionRate}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, metrics.collectionRate)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Remaining Due */}
+          <div className="bg-[#121212] rounded-2xl p-5 border border-amber-500/20 relative overflow-hidden shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+                Remaining Balance
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono truncate">
+              {formatPKR(metrics.totalRemaining)}
+            </div>
+            <div className="mt-3 text-[11px] text-amber-400/80 font-medium">
+              Pending collection
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* VIEW SWITCHER TABS: UPCOMING SCHEDULE vs BOOKINGS & BUDGET */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-2">
@@ -967,29 +1127,30 @@ export default function AdminEventsBudgetPage() {
                 <thead>
                   <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
                     <th className="px-5 py-3.5">Shoot Date</th>
-                    <th className="px-5 py-3.5">Client &amp; Invoice</th>
-                    <th className="px-5 py-3.5">Schedule / Day</th>
-                    <th className="px-5 py-3.5">Location</th>
-                    <th className="px-5 py-3.5 text-right">Balance Due</th>
+                    <th className="px-5 py-3.5">Client &amp; Contact</th>
+                    <th className="px-5 py-3.5">Event &amp; Scope</th>
+                    <th className="px-5 py-3.5">Venue / Location</th>
+                    <th className="px-5 py-3.5">Shoot Status</th>
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredShoots.map((shoot) => {
                     const rel = getRelativeDateInfo(shoot.shootDate);
-                    const isDue = shoot.remainingAmount > 0;
+                    const dateObj = formatEventDateWithDay(shoot.shootDate);
+                    const shootStatus = getShootStatus(shoot.shootDate);
 
                     return (
                       <tr
                         key={shoot.shootId}
                         className="hover:bg-white/[0.03] transition-colors"
                       >
-                        {/* 1. Shoot Date with Countdown Badge */}
+                        {/* 1. Shoot Date with Day of Week & Countdown Badge */}
                         <td className="px-5 py-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-2">
                               <span className="font-extrabold text-white text-[13.5px] font-mono">
-                                {formatEventDate(shoot.shootDate)}
+                                {dateObj.date}
                               </span>
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider border ${rel.color}`}
@@ -997,14 +1158,19 @@ export default function AdminEventsBudgetPage() {
                                 {rel.label}
                               </span>
                             </div>
+                            {dateObj.weekday && (
+                              <span className="text-[11px] text-accent-gold/80 font-medium">
+                                {dateObj.weekday}
+                              </span>
+                            )}
                           </div>
                         </td>
 
-                        {/* 2. Client & Invoice */}
+                        {/* 2. Client Name, Invoice & Contact / WhatsApp */}
                         <td className="px-5 py-4">
-                          <div className="flex flex-col gap-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-white text-[13px]">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-white text-[13.5px]">
                                 {shoot.clientName}
                               </span>
                               {shoot.invoiceNo && (
@@ -1013,79 +1179,76 @@ export default function AdminEventsBudgetPage() {
                                 </span>
                               )}
                             </div>
-                            {shoot.clientPhone && (
-                              <span className="text-[10px] text-text-muted/80 flex items-center gap-1 font-mono">
-                                <Phone className="w-2.5 h-2.5 text-accent-gold/60" />
-                                <span>{shoot.clientPhone}</span>
+                            {shoot.clientPhone ? (
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`https://wa.me/${shoot.clientPhone.replace(/[^0-9]/g, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <MessageCircle className="w-3 h-3 text-emerald-400" />
+                                  <span>{shoot.clientPhone}</span>
+                                </a>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-text-muted/50 italic">
+                                No phone recorded
                               </span>
                             )}
                           </div>
                         </td>
 
-                        {/* 3. Schedule / Day */}
+                        {/* 3. Event & Scope (Day label + Service scope) */}
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-0.5">
-                            <span className="font-semibold text-accent-gold text-xs">
-                              {shoot.dayLabel}
-                            </span>
-                            <span className="text-[11px] text-text-muted truncate max-w-xs">
-                              {shoot.scope}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-md bg-accent-gold/15 text-accent-gold font-bold text-[10px] border border-accent-gold/30">
+                                {shoot.dayLabel}
+                              </span>
+                              {shoot.eventTitle && shoot.eventTitle !== shoot.scope && (
+                                <span className="font-semibold text-white text-xs">
+                                  {shoot.eventTitle}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-text-muted flex items-center gap-1 mt-0.5">
+                              <Camera className="w-3 h-3 text-accent-gold/60 shrink-0" />
+                              <span className="truncate max-w-xs">{shoot.scope}</span>
                             </span>
                           </div>
                         </td>
 
-                        {/* 4. Location */}
+                        {/* 4. Venue / Location */}
                         <td className="px-5 py-4 whitespace-nowrap text-text-muted text-xs">
                           <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3 h-3 text-text-muted/60" />
-                            <span>{shoot.location}</span>
+                            <MapPin className="w-3.5 h-3.5 text-accent-gold/70 shrink-0" />
+                            <span className="text-white/90 font-medium">{shoot.location}</span>
                           </div>
                         </td>
 
-                        {/* 5. Balance Due on Shoot */}
-                        <td className="px-5 py-4 text-right whitespace-nowrap font-bold">
-                          {isDue ? (
-                            <div className="flex flex-col items-end">
-                              <span className="text-amber-300 font-mono text-xs font-bold">
-                                {formatPKR(shoot.remainingAmount)}
-                              </span>
-                              <span className="text-[9.5px] text-rose-400 font-normal">
-                                Payment Pending
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-emerald-400 font-semibold text-xs inline-flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Cleared</span>
-                            </span>
-                          )}
+                        {/* 5. Shoot Status */}
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] border ${shootStatus.color}`}>
+                            {shootStatus.label}
+                          </span>
                         </td>
 
-                        {/* 6. Actions */}
+                        {/* 6. Actions: View Shoot Details */}
                         <td className="px-5 py-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            {isDue && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenPaymentModal(shoot.rawEvent)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 hover:bg-accent-gold hover:text-bg-primary font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-                                title="Record payment for this booking"
-                              >
-                                <CreditCard className="w-3 h-3" />
-                                <span>+ Pay</span>
-                              </button>
-                            )}
-
                             <button
                               type="button"
                               onClick={() => {
-                                setActiveEventForHistory(shoot.rawEvent);
-                                setHistoryModalOpen(true);
+                                setActiveShootForDetails(shoot);
+                                setShootDetailsModalOpen(true);
                               }}
-                              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                              title="View Booking Ledger"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-primary hover:text-accent-gold hover:border-accent-gold/40 hover:bg-white/10 transition-all text-xs font-semibold cursor-pointer shadow-sm"
+                              title="View Event Logistics & Shoot Details"
                             >
                               <Eye className="w-3.5 h-3.5" />
+                              <span>Details</span>
                             </button>
                           </div>
                         </td>
@@ -1973,6 +2136,135 @@ export default function AdminEventsBudgetPage() {
               <button
                 type="button"
                 onClick={() => setHistoryModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-text-muted hover:text-white transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SHOOT DETAILS MODAL (Pure Event Logistics & Coordination, Zero Payment Clutter) */}
+      {/* ========================================================================= */}
+      {shootDetailsModalOpen && activeShootForDetails && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
+                  <CalendarDays className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    Shoot Event Details
+                  </h3>
+                  <p className="text-[11px] text-text-muted">
+                    Event logistics &amp; coordination
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShootDetailsModalOpen(false)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Client Card */}
+            <div className="bg-[#181818] border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-sm font-bold text-white">
+                    {activeShootForDetails.clientName}
+                  </div>
+                  {activeShootForDetails.invoiceNo && (
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded font-mono text-[9px] bg-accent-gold/10 text-accent-gold border border-accent-gold/25 font-bold">
+                      {activeShootForDetails.invoiceNo}
+                    </span>
+                  )}
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] border ${getShootStatus(activeShootForDetails.shootDate).color}`}>
+                  {getShootStatus(activeShootForDetails.shootDate).label}
+                </span>
+              </div>
+
+              {activeShootForDetails.clientPhone && (
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-xs text-text-muted">Client Contact:</span>
+                  <a
+                    href={`https://wa.me/${activeShootForDetails.clientPhone.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-semibold hover:bg-emerald-900/50 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>{activeShootForDetails.clientPhone}</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Shoot Timeline & Logistics */}
+            <div className="space-y-3">
+              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                    Shoot Date &amp; Day
+                  </span>
+                  <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                    {formatEventDateWithDay(activeShootForDetails.shootDate).date}
+                  </span>
+                  <span className="text-[11px] text-accent-gold font-medium">
+                    {formatEventDateWithDay(activeShootForDetails.shootDate).weekday}
+                  </span>
+                </div>
+                <span className="px-3 py-1 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 text-xs font-bold">
+                  {activeShootForDetails.dayLabel}
+                </span>
+              </div>
+
+              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                  Location / Venue
+                </span>
+                <div className="flex items-center gap-2 text-xs text-white">
+                  <MapPin className="w-3.5 h-3.5 text-accent-gold shrink-0" />
+                  <span className="font-semibold">{activeShootForDetails.location}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                  Service Scope
+                </span>
+                <div className="flex items-center gap-2 text-xs text-white">
+                  <Camera className="w-3.5 h-3.5 text-accent-gold shrink-0" />
+                  <span>{activeShootForDetails.scope}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setShootDetailsModalOpen(false);
+                  setActiveTab("bookings");
+                }}
+                className="text-xs text-text-muted hover:text-accent-gold transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>View Financials &rarr;</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShootDetailsModalOpen(false)}
                 className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-text-muted hover:text-white transition-all cursor-pointer"
               >
                 Close
