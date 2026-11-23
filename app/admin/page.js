@@ -173,11 +173,9 @@ export default function AdminInvoicePage() {
   const [syncedSuccess, setSyncedSuccess] = useState(false);
 
   const handleSyncToEventTracker = async (silent = false) => {
-    // Only sync if client name or total amount is entered
-    const cName = (formData.clientName && formData.clientName.trim()) 
-      ? formData.clientName.trim() 
-      : (formData.invoiceNo ? `Client (${formData.invoiceNo})` : "");
-    if (!cName && Number(formData.totalAmount || 0) <= 0) return;
+    // Only sync if actual client name is entered by the user
+    const cName = formData.clientName && formData.clientName.trim();
+    if (!cName || Number(formData.totalAmount || 0) <= 0) return;
 
     try {
       setSyncingEvent(true);
@@ -187,7 +185,7 @@ export default function AdminInvoicePage() {
       const computedStatus = paidNum <= 0 ? "UNPAID" : remNum <= 0 ? "FULLY PAID" : "PARTIALLY PAID";
 
       const payload = {
-        client_name: cName || "Client Booking",
+        client_name: cName,
         client_phone: "",
         event_title: formData.serviceName || "Photography Services",
         event_date: (Array.isArray(formData.eventDates) && formData.eventDates.find(Boolean)) || formData.rawDate || new Date().toISOString().split("T")[0],
@@ -238,16 +236,6 @@ export default function AdminInvoicePage() {
       setSyncingEvent(false);
     }
   };
-
-  // Auto-sync debounced effect: Automatically records invoice in Event Tracker in background
-  useEffect(() => {
-    if (!formData.clientName && Number(formData.totalAmount || 0) <= 0) return;
-    const timer = setTimeout(() => {
-      handleSyncToEventTracker(true);
-    }, 1500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.clientName, formData.totalAmount, formData.paidAmount, formData.status, formData.serviceName, formData.rawDate, formData.eventDates]);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {

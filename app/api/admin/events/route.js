@@ -54,6 +54,22 @@ export async function GET() {
   }
 }
 
+// DELETE /api/admin/events - Clear all events and payments (Fresh Start)
+export async function DELETE() {
+  try {
+    const supabase = getSupabase();
+    // Delete payments first due to foreign key
+    await supabase.from("event_payments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const { error } = await supabase.from("event_bookings").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ success: true, message: "All events cleared successfully" });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
 // POST /api/admin/events - Create or update event booking (Upsert by invoice_no if exists)
 export async function POST(req) {
   try {
