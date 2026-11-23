@@ -26,8 +26,7 @@ const teamMembers = [
     image: moizImg,
     instagram: "https://www.instagram.com/the_fs_visuals/",
     whatsapp: "https://wa.me/923273129464",
-    email: "mailto:the.fs.visualss@gmail.com",
-    imageClass: "object-[35%_top] scale-[1.75] origin-[35%_top] group-hover:scale-[1.82]"
+    email: "mailto:the.fs.visualss@gmail.com"
   },
   {
     name: "Faraz Alam",

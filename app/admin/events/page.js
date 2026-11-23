@@ -2087,10 +2087,10 @@ export default function AdminEventsBudgetPage() {
       {/* SHOOT DETAILS MODAL (Pure Event Logistics & Coordination, Zero Payment Clutter) */}
       {/* ========================================================================= */}
       {shootDetailsModalOpen && activeShootForDetails && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Header (Pinned) */}
+            <div className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5 pb-3 sm:pb-4 shrink-0 bg-[#121212]">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
                   <CalendarDays className="w-4 h-4" />
@@ -2113,172 +2113,176 @@ export default function AdminEventsBudgetPage() {
               </button>
             </div>
 
-            {/* Client Card */}
-            <div className="bg-[#181818] border border-white/10 rounded-xl p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-bold text-white">
-                    {activeShootForDetails.clientName}
+            {/* Scrollable Body (Never overflows outside screen) */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 min-h-0">
+              {/* Client Card */}
+              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-sm font-bold text-white">
+                      {activeShootForDetails.clientName}
+                    </div>
                   </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] border ${getShootStatus(activeShootForDetails.shootDate).color}`}>
+                    {getShootStatus(activeShootForDetails.shootDate).label}
+                  </span>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] border ${getShootStatus(activeShootForDetails.shootDate).color}`}>
-                  {getShootStatus(activeShootForDetails.shootDate).label}
-                </span>
+
+                {activeShootForDetails.clientPhone && (
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-xs text-text-muted">Client Contact:</span>
+                    <a
+                      href={`https://wa.me/${activeShootForDetails.clientPhone.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-semibold hover:bg-emerald-900/50 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>{activeShootForDetails.clientPhone}</span>
+                    </a>
+                  </div>
+                )}
+
+                {activeShootForDetails.clientEmail && (
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+                    <span className="text-text-muted">Email:</span>
+                    <span className="text-white font-mono">{activeShootForDetails.clientEmail}</span>
+                  </div>
+                )}
               </div>
 
-              {activeShootForDetails.clientPhone && (
-                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-xs text-text-muted">Client Contact:</span>
-                  <a
-                    href={`https://wa.me/${activeShootForDetails.clientPhone.replace(/[^0-9]/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-semibold hover:bg-emerald-900/50 transition-colors"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>{activeShootForDetails.clientPhone}</span>
-                  </a>
-                </div>
-              )}
+              {/* Shoot Timeline & Logistics */}
+              <div className="space-y-2.5">
+                {Array.isArray(activeShootForDetails.allDates) && activeShootForDetails.allDates.length > 1 ? (
+                  /* Multi-Day Dates Card with Highlighted Current Day */
+                  <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                        All Event Shoot Dates ({activeShootForDetails.allDates.length} Days Total)
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-gold/15 border border-accent-gold/30 text-accent-gold">
+                        {activeShootForDetails.dayLabel}
+                      </span>
+                    </div>
 
-              {activeShootForDetails.clientEmail && (
-                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-                  <span className="text-text-muted">Email:</span>
-                  <span className="text-white font-mono">{activeShootForDetails.clientEmail}</span>
-                </div>
-              )}
-            </div>
+                    <div className="space-y-1.5 pt-0.5">
+                      {activeShootForDetails.allDates.map((dStr, idx) => {
+                        const dObj = formatEventDateWithDay(dStr);
+                        const isSelected = (idx + 1) === activeShootForDetails.dayIndex;
+                        const st = getShootStatus(dStr);
 
-            {/* Shoot Timeline & Logistics */}
-            <div className="space-y-3">
-              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
-                    Shoot Date &amp; Day
-                  </span>
-                  <span className="text-sm font-bold text-white font-mono mt-0.5 block">
-                    {formatEventDateWithDay(activeShootForDetails.shootDate).date}
-                  </span>
-                  <span className="text-[11px] text-accent-gold font-medium">
-                    {formatEventDateWithDay(activeShootForDetails.shootDate).weekday}
-                  </span>
-                </div>
-                <span className="px-3 py-1 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 text-xs font-bold">
-                  {activeShootForDetails.dayLabel}
-                </span>
-              </div>
-
-              {/* Complete All-Days Shoot Schedule for this Client */}
-              {Array.isArray(activeShootForDetails.allDates) && activeShootForDetails.allDates.length > 1 && (
-                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
-                      All Event Shoot Dates ({activeShootForDetails.allDates.length} Days Total)
-                    </span>
-                    <span className="text-[10px] text-accent-gold font-bold">
-                      Multi-Day Event
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 pt-0.5">
-                    {activeShootForDetails.allDates.map((dStr, idx) => {
-                      const dObj = formatEventDateWithDay(dStr);
-                      const isSelected = (idx + 1) === activeShootForDetails.dayIndex;
-                      const st = getShootStatus(dStr);
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
-                            isSelected
-                              ? "bg-accent-gold/15 border-accent-gold/50 text-white shadow-sm"
-                              : "bg-[#141414] border-white/5 text-text-muted"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
                               isSelected
-                                ? "bg-accent-gold text-bg-primary font-extrabold"
-                                : "bg-white/5 text-text-muted border border-white/10"
-                            }`}>
-                              Day {idx + 1}
-                            </span>
-                            <div>
-                              <span className="text-xs font-mono font-bold text-white block">
-                                {dObj.date}
+                                ? "bg-accent-gold/15 border-accent-gold/50 text-white shadow-sm"
+                                : "bg-[#141414] border-white/5 text-text-muted"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                isSelected
+                                  ? "bg-accent-gold text-bg-primary font-extrabold"
+                                  : "bg-white/5 text-text-muted border border-white/10"
+                              }`}>
+                                Day {idx + 1}
                               </span>
-                              <span className="text-[10px] text-text-muted">
-                                {dObj.weekday}
+                              <div>
+                                <span className="text-xs font-mono font-bold text-white block">
+                                  {dObj.date}
+                                </span>
+                                <span className="text-[10px] text-text-muted">
+                                  {dObj.weekday}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] border ${st.color}`}>
+                                {st.label}
                               </span>
+                              {isSelected && (
+                                <span className="text-[10px] font-bold text-accent-gold">
+                                  &bull; Current
+                                </span>
+                              )}
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] border ${st.color}`}>
-                              {st.label}
-                            </span>
-                            {isSelected && (
-                              <span className="text-[10px] font-bold text-accent-gold">
-                                &bull; Current
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
-                  Location / Venue
-                </span>
-                <div className="flex items-center gap-2 text-xs text-white">
-                  <MapPin className="w-3.5 h-3.5 text-accent-gold shrink-0" />
-                  <span className="font-semibold">{activeShootForDetails.location}</span>
-                </div>
-              </div>
-
-              <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
-                  Service Scope
-                </span>
-                <div className="flex items-center gap-2 text-xs text-white">
-                  <Camera className="w-3.5 h-3.5 text-accent-gold shrink-0" />
-                  <span>{activeShootForDetails.scope}</span>
-                </div>
-              </div>
-
-              {/* Special Notes & Instructions if any */}
-              {(() => {
-                const cleanNotes = (activeShootForDetails.notes || "")
-                  .replace(/\[DATES:[^\]]+\]/g, "")
-                  .replace(/Duration:\s*[^|]+(\|)?/g, "")
-                  .trim();
-                if (!cleanNotes) return null;
-                return (
-                  <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
-                      Special Notes / Instructions
+                ) : (
+                  /* Single Day Shoot Date Card */
+                  <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                        Shoot Date &amp; Day
+                      </span>
+                      <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                        {formatEventDateWithDay(activeShootForDetails.shootDate).date}
+                      </span>
+                      <span className="text-[11px] text-accent-gold font-medium">
+                        {formatEventDateWithDay(activeShootForDetails.shootDate).weekday}
+                      </span>
+                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-accent-gold/15 text-accent-gold border border-accent-gold/30 text-xs font-bold">
+                      {activeShootForDetails.dayLabel}
                     </span>
-                    <p className="text-xs text-white/90 leading-relaxed whitespace-pre-wrap">
-                      {cleanNotes}
-                    </p>
                   </div>
-                );
-              })()}
+                )}
+
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                    Location / Venue
+                  </span>
+                  <div className="flex items-center gap-2 text-xs text-white">
+                    <MapPin className="w-3.5 h-3.5 text-accent-gold shrink-0" />
+                    <span className="font-semibold">{activeShootForDetails.location}</span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                    Service Scope
+                  </span>
+                  <div className="flex items-center gap-2 text-xs text-white">
+                    <Camera className="w-3.5 h-3.5 text-accent-gold shrink-0" />
+                    <span>{activeShootForDetails.scope}</span>
+                  </div>
+                </div>
+
+                {/* Special Notes & Instructions if any */}
+                {(() => {
+                  const cleanNotes = (activeShootForDetails.notes || "")
+                    .replace(/\[DATES:[^\]]+\]/g, "")
+                    .replace(/Duration:\s*[^|]+(\|)?/g, "")
+                    .trim();
+                  if (!cleanNotes) return null;
+                  return (
+                    <div className="bg-[#181818] border border-white/10 rounded-xl p-3 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
+                        Special Notes / Instructions
+                      </span>
+                      <p className="text-xs text-white/90 leading-relaxed whitespace-pre-wrap">
+                        {cleanNotes}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
-            {/* Footer */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+            {/* Footer (Pinned at bottom, never cut off) */}
+            <div className="p-3.5 sm:p-4 border-t border-white/10 flex items-center justify-between shrink-0 bg-[#141414]">
               <button
                 type="button"
                 onClick={() => {
                   setShootDetailsModalOpen(false);
                   setActiveTab("bookings");
                 }}
-                className="text-xs text-text-muted hover:text-accent-gold transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-xs text-text-muted hover:text-accent-gold transition-colors flex items-center gap-1 cursor-pointer font-medium"
               >
                 <span>View Financials &rarr;</span>
               </button>
