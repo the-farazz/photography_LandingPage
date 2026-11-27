@@ -26,7 +26,6 @@ import {
   Calendar,
   Plus,
   ChevronDown,
-  BookmarkCheck,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -171,100 +170,12 @@ export default function AdminInvoicePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [syncingEvent, setSyncingEvent] = useState(false);
-  const [syncedSuccess, setSyncedSuccess] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToastMessage({ msg, type });
     setTimeout(() => setToastMessage(null), 4000);
   };
-
-  const handleSaveInvoice = async (silent = false) => {
-    const cName = formData.clientName && formData.clientName.trim();
-    if (!cName) {
-      if (!silent) showToast("Please enter Client Name before saving.", "error");
-      return;
-    }
-    const totalNum = Number(formData.totalAmount || 0);
-    if (totalNum <= 0) {
-      if (!silent) showToast("Please enter a valid Total Project Amount.", "error");
-      return;
-    }
-
-    try {
-      setSyncingEvent(true);
-      const paidNum = Number(formData.paidAmount || 0);
-      const remNum = Math.max(0, totalNum - paidNum);
-      const computedStatus = paidNum <= 0 ? "UNPAID" : remNum <= 0 ? "FULLY PAID" : "PARTIALLY PAID";
-
-      const validDates = Array.isArray(formData.eventDates)
-        ? formData.eventDates.filter((d) => d && typeof d === "string" && d.trim())
-        : [];
-      const primaryDate = validDates[0] || formData.rawDate || new Date().toISOString().split("T")[0];
-      const datesTag = validDates.length > 0 ? `[DATES:${validDates.join(",")}] ` : "";
-      const durTag = formData.duration ? `Duration: ${formData.duration} | ` : "";
-
-      const payload = {
-        client_name: cName,
-        client_phone: "",
-        event_title: formData.serviceName || "Photography Services",
-        event_date: primaryDate,
-        event_location: "Karachi, Pakistan",
-        service_type: formData.serviceName,
-        total_amount: totalNum,
-        paid_amount: paidNum,
-        remaining_amount: remNum,
-        status: computedStatus,
-        invoice_no: formData.invoiceNo,
-        notes: `${datesTag}${durTag}${formData.description || formData.notes || ""}`,
-      };
-
-      const res = await fetch("/api/admin/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const resData = await res.json().catch(() => ({}));
-
-      // Immediately update local cache so /admin/events shows it instantly
-      try {
-        const local = localStorage.getItem("fsv_cached_events");
-        const list = local ? JSON.parse(local) : [];
-        const cleanList = list.filter((e) => e.invoice_no !== formData.invoiceNo);
-        const savedEvt = resData?.event || {
-          id: `evt_inv_${Date.now()}`,
-          ...payload,
-          event_payments: paidNum > 0 ? [
-            {
-              id: `pay_inv_${Date.now()}`,
-              amount: paidNum,
-              payment_date: payload.event_date,
-              payment_method: "Cash / Advance",
-              notes: "Initial Advance from Invoice",
-            }
-          ] : [],
-        };
-        localStorage.setItem("fsv_cached_events", JSON.stringify([savedEvt, ...cleanList]));
-      } catch {}
-
-      setSyncedSuccess(true);
-      if (!silent) {
-        showToast(`Invoice ${formData.invoiceNo} saved to Event Budget!`, "success");
-      }
-      setTimeout(() => setSyncedSuccess(false), 3500);
-    } catch (err) {
-      console.warn("Event budget save notice:", err);
-      if (!silent) {
-        showToast("Failed to save invoice. Please try again.", "error");
-      }
-    } finally {
-      setSyncingEvent(false);
-    }
-  };
-
-  const handleSyncToEventTracker = (silent = true) => handleSaveInvoice(silent);
 
   // Toggle multi-select service options
   const handleToggleService = (key) => {
@@ -440,8 +351,6 @@ export default function AdminInvoicePage() {
 
     try {
       setDownloadingPdf(true);
-      // Automatically sync invoice details to Event Budget Tracker
-      handleSyncToEventTracker(true);
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -511,8 +420,6 @@ export default function AdminInvoicePage() {
 
     try {
       setDownloadingPng(true);
-      // Automatically sync invoice details to Event Budget Tracker
-      handleSyncToEventTracker(true);
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -566,8 +473,6 @@ _“Aap ki yaadon ka cinematic safar.”_
 FS Visuals Karachi | +92 327 3129464`;
 
     navigator.clipboard.writeText(summaryText);
-    // Automatically sync invoice details to Event Budget Tracker
-    handleSyncToEventTracker(true);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -608,29 +513,6 @@ FS Visuals Karachi | +92 327 3129464`;
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-wrap">
-            {/* Save Invoice Button (Explicit Save without downloading) */}
-            <button
-              type="button"
-              onClick={() => handleSaveInvoice(false)}
-              disabled={syncingEvent}
-              className={`flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                syncedSuccess
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/30"
-              }`}
-              title="Save invoice to Event Budget without downloading"
-            >
-              {syncingEvent ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : syncedSuccess ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-              ) : (
-                <BookmarkCheck className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden sm:inline">{syncedSuccess ? "Saved!" : "Save Invoice"}</span>
-              <span className="sm:hidden">Save</span>
-            </button>
-
             {/* Primary 1-Click Download PDF Button */}
             <button
               onClick={handleDownloadPDF}
@@ -1199,34 +1081,8 @@ FS Visuals Karachi | +92 327 3129464`;
             </button>
           </div>
 
-          {/* Save & Download Action Buttons */}
-          <div className="pt-3 space-y-2.5">
-            {/* Primary Save to Event Budget Button (NO download required!) */}
-            <button
-              type="button"
-              onClick={() => handleSaveInvoice(false)}
-              disabled={syncingEvent}
-              className={`w-full py-3.5 text-xs font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 rounded-xl shadow-lg cursor-pointer ${
-                syncedSuccess
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40"
-              }`}
-            >
-              {syncingEvent ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Saving to Event Budget...
-                </>
-              ) : syncedSuccess ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-300" /> Invoice Saved to Event Budget!
-                </>
-              ) : (
-                <>
-                  <BookmarkCheck className="w-4 h-4" /> Save Invoice to Event Budget
-                </>
-              )}
-            </button>
-
+          {/* Download Action Button */}
+          <div className="pt-3">
             {/* Download PDF Button */}
             <button
               type="button"
@@ -1285,26 +1141,6 @@ FS Visuals Karachi | +92 327 3129464`;
 
           {/* Mobile Quick Action Buttons on Preview Screen */}
           <div className="w-full space-y-2.5 lg:hidden pb-6">
-            <button
-              type="button"
-              onClick={() => handleSaveInvoice(false)}
-              disabled={syncingEvent}
-              className={`w-full py-3.5 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 rounded-xl shadow-md cursor-pointer transition-all ${
-                syncedSuccess
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40"
-              }`}
-            >
-              {syncingEvent ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : syncedSuccess ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              ) : (
-                <BookmarkCheck className="w-4 h-4" />
-              )}
-              <span>{syncedSuccess ? "Saved to Event Budget!" : "Save Invoice to Event Budget"}</span>
-            </button>
-
             <button
               type="button"
               onClick={handleDownloadPDF}
