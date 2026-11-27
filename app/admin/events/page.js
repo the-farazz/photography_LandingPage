@@ -1688,19 +1688,19 @@ export default function AdminEventsBudgetPage() {
       {/* MODAL 2: BOOK EVENT (Responsive, Multi-Select Services & Dynamic Days) */}
       {/* ========================================================================= */}
       {newEventModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[86vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Pinned Header */}
-            <div className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5 shrink-0 bg-[#161616]">
+            <div className="flex items-center justify-between border-b border-white/10 p-3.5 sm:p-4 shrink-0 bg-[#161616]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
+                <div className="w-8 h-8 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
                   <CalendarCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">
+                  <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                     Book Event
                   </h3>
-                  <p className="text-xs text-text-muted mt-0.5">
+                  <p className="text-[11px] text-text-muted">
                     Enter client booking, multi-day schedule &amp; payment details.
                   </p>
                 </div>
@@ -1714,9 +1714,9 @@ export default function AdminEventsBudgetPage() {
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleCreateNewEvent} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+            {/* Scrollable Form Body with min-h-0 for proper flex shrink */}
+            <form onSubmit={handleCreateNewEvent} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0 touch-pan-y overscroll-contain">
                 {/* 1. Client Info */}
                 <div className="space-y-3">
                   <div>
