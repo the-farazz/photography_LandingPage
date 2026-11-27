@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarCheck,
   Plus,
+  Minus,
   Search,
   Filter,
   DollarSign,
@@ -64,6 +65,39 @@ export default function AdminEventsBudgetPage() {
   const [eventDaysCount, setEventDaysCount] = useState(1);
   const [multiEventDates, setMultiEventDates] = useState([new Date().toISOString().split("T")[0]]);
 
+  // Multi-select services state for Book Event (just like Invoice Generator)
+  const [newEventServices, setNewEventServices] = useState({
+    photography: true,
+    videography: true,
+    drone: false,
+    album: false,
+  });
+
+  const computeServiceScopeString = (servs) => {
+    const parts = [];
+    if (servs.photography) parts.push("Photography");
+    if (servs.videography) parts.push("Videography");
+    if (servs.drone) parts.push("Drone Cinema");
+    if (servs.album) parts.push("Luxury Album");
+
+    if (parts.length === 0) return "Photography Services";
+    if (parts.length === 1) return `${parts[0]} Services`;
+    if (parts.length === 2) return `${parts[0]} & ${parts[1]} Services`;
+    return `${parts.slice(0, -1).join(", ")} & ${parts[parts.length - 1]}`;
+  };
+
+  const handleToggleEventService = (key) => {
+    const next = { ...newEventServices, [key]: !newEventServices[key] };
+    if (!next.photography && !next.videography && !next.drone && !next.album) {
+      next[key] = true;
+    }
+    setNewEventServices(next);
+    setNewEventData((prev) => ({
+      ...prev,
+      service_type: computeServiceScopeString(next),
+    }));
+  };
+
   const [newEventData, setNewEventData] = useState({
     client_name: "",
     client_phone: "",
@@ -71,7 +105,7 @@ export default function AdminEventsBudgetPage() {
     event_title: "",
     event_date: new Date().toISOString().split("T")[0],
     event_location: "Karachi, Pakistan",
-    service_type: "Photography & Videography",
+    service_type: "Photography & Videography Services",
     total_amount: "",
     paid_amount: "",
     payment_method: "Cash",
@@ -255,11 +289,20 @@ export default function AdminEventsBudgetPage() {
 
   // 4. Submit New Event
   const handleDaysCountChange = (num) => {
-    const count = Math.max(1, Math.min(10, num));
+    const count = Math.max(1, Math.min(30, Number(num) || 1));
     setEventDaysCount(count);
     const nextDates = [...multiEventDates];
+    const baseDateStr = nextDates[0] || new Date().toISOString().split("T")[0];
+    const baseDate = new Date(baseDateStr + (baseDateStr.includes("T") ? "" : "T00:00:00"));
+
     while (nextDates.length < count) {
-      nextDates.push("");
+      const idx = nextDates.length;
+      if (!isNaN(baseDate.getTime())) {
+        const d = new Date(baseDate.getTime() + idx * 86400000);
+        nextDates.push(d.toISOString().split("T")[0]);
+      } else {
+        nextDates.push("");
+      }
     }
     setMultiEventDates(nextDates.slice(0, count));
   };
@@ -284,11 +327,13 @@ export default function AdminEventsBudgetPage() {
       const validDates = multiEventDates.filter(Boolean);
       const primaryDate = validDates[0] || newEventData.event_date || new Date().toISOString().split("T")[0];
       const datesMeta = validDates.length > 0 ? `[DATES:${validDates.join(",")}] ` : "";
-      const durLabel = validDates.length > 1 ? `Duration: ${validDates.length} Days | ` : "";
+      const durLabel = validDates.length > 1 ? `Duration: ${validDates.length} Days | ` : "Duration: 1 Day | ";
+      const finalService = newEventData.service_type || computeServiceScopeString(newEventServices);
       const notesPayload = `${datesMeta}${durLabel}${newEventData.notes || ""}`;
 
       const payload = {
         ...newEventData,
+        service_type: finalService,
         event_date: primaryDate,
         notes: notesPayload,
       };
@@ -332,12 +377,18 @@ export default function AdminEventsBudgetPage() {
         event_title: "",
         event_date: new Date().toISOString().split("T")[0],
         event_location: "Karachi, Pakistan",
-        service_type: "Photography & Videography",
+        service_type: "Photography & Videography Services",
         total_amount: "",
         paid_amount: "",
         payment_method: "Cash",
         invoice_no: "",
         notes: "",
+      });
+      setNewEventServices({
+        photography: true,
+        videography: true,
+        drone: false,
+        album: false,
       });
       setEventDaysCount(1);
       setMultiEventDates([new Date().toISOString().split("T")[0]]);
@@ -1634,21 +1685,25 @@ export default function AdminEventsBudgetPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: BOOK EVENT */}
+      {/* MODAL 2: BOOK EVENT (Responsive, Multi-Select Services & Dynamic Days) */}
       {/* ========================================================================= */}
       {newEventModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                  <CalendarCheck className="w-4 h-4 text-accent-gold" />
-                  <span>Book Event</span>
-                </h3>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Enter client booking details.
-                </p>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Pinned Header */}
+            <div className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5 shrink-0 bg-[#161616]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
+                  <CalendarCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    Book Event
+                  </h3>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Enter client booking, multi-day schedule &amp; payment details.
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -1659,85 +1714,98 @@ export default function AdminEventsBudgetPage() {
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleCreateNewEvent} className="space-y-4">
-              {/* Client Info */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Client Name <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newEventData.client_name}
-                    onChange={(e) => setNewEventData({ ...newEventData, client_name: e.target.value })}
-                    placeholder="e.g. Farhan & Ayesha Wedding"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleCreateNewEvent} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                {/* 1. Client Info */}
+                <div className="space-y-3">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                      Phone Number
+                      Client Name <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="text"
-                      value={newEventData.client_phone}
-                      onChange={(e) => setNewEventData({ ...newEventData, client_phone: e.target.value })}
-                      placeholder="0300-1234567"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all font-mono"
+                      required
+                      value={newEventData.client_name}
+                      onChange={(e) => setNewEventData({ ...newEventData, client_name: e.target.value })}
+                      placeholder="e.g. Farhan &amp; Ayesha Wedding"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all font-medium"
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                        Phone / WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        value={newEventData.client_phone}
+                        onChange={(e) => setNewEventData({ ...newEventData, client_phone: e.target.value })}
+                        placeholder="0300-1234567"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                        Client Email
+                      </label>
+                      <input
+                        type="email"
+                        value={newEventData.client_email}
+                        onChange={(e) => setNewEventData({ ...newEventData, client_email: e.target.value })}
+                        placeholder="client@gmail.com"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                      Client Email
+                      Location / Venue
                     </label>
                     <input
-                      type="email"
-                      value={newEventData.client_email}
-                      onChange={(e) => setNewEventData({ ...newEventData, client_email: e.target.value })}
-                      placeholder="client@gmail.com"
+                      type="text"
+                      value={newEventData.event_location}
+                      onChange={(e) => setNewEventData({ ...newEventData, event_location: e.target.value })}
+                      placeholder="Karachi, Pakistan"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Service Scope */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 2. Event Title / Occasion */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Service Scope
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                      Event Title / Occasion
+                    </label>
+                    <span className="text-[10px] text-text-muted">Quick select or type custom</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
                     {[
-                      "Photography & Videography",
-                      "Photography Services",
-                      "Cinematic Videography",
-                      "Drone Cinematography",
-                      "Complete Wedding Coverage",
-                    ].map((srv) => (
+                      "Barat",
+                      "Walima",
+                      "Mehndi",
+                      "Qawwali / Sangeet",
+                      "Engagement",
+                      "Birthday",
+                      "Corporate Event",
+                    ].map((occ) => (
                       <button
-                        key={srv}
+                        key={occ}
                         type="button"
-                        onClick={() => setNewEventData({ ...newEventData, service_type: srv })}
-                        className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left truncate ${
-                          newEventData.service_type === srv
-                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
-                            : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
+                        onClick={() => setNewEventData({ ...newEventData, event_title: occ })}
+                        className={`px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all cursor-pointer ${
+                          newEventData.event_title === occ
+                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold font-bold"
+                            : "bg-[#181818] text-text-muted border-white/10 hover:text-white hover:border-white/20"
                         }`}
                       >
-                        {srv}
+                        {occ}
                       </button>
                     ))}
                   </div>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Event Title / Occasion
-                  </label>
                   <input
                     type="text"
                     value={newEventData.event_title}
@@ -1746,210 +1814,337 @@ export default function AdminEventsBudgetPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
                   />
                 </div>
-              </div>
 
-              {/* Multi-Day Dates Selector */}
-              <div className="space-y-2 p-3 bg-[#181818] border border-white/10 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5" />
-                    <span>Shoot Days ({eventDaysCount})</span>
-                  </label>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4].map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => handleDaysCountChange(d)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                          eventDaysCount === d
-                            ? "bg-accent-gold text-bg-primary"
-                            : "bg-white/5 text-text-muted hover:text-white"
-                        }`}
-                      >
-                        {d} {d === 1 ? "Day" : "Days"}
-                      </button>
-                    ))}
+                {/* 3. Service Scope (Multi-Select Checkboxes) */}
+                <div className="p-3.5 bg-[#181818] border border-white/10 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Service Scope (Multi-Select)</span>
+                    </label>
+                    <span className="text-[10px] text-text-muted">Select all that apply</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      {
+                        key: "photography",
+                        label: "Photography Coverage",
+                        desc: "Fine-art & candid stills",
+                        icon: Camera,
+                      },
+                      {
+                        key: "videography",
+                        label: "Cinematic Videography",
+                        desc: "4K cinematic film & teaser",
+                        icon: Film,
+                      },
+                      {
+                        key: "drone",
+                        label: "Aerial Drone Cinema",
+                        desc: "4K aerial venue coverage",
+                        icon: Sparkles,
+                      },
+                      {
+                        key: "album",
+                        label: "Luxury Wedding Album",
+                        desc: "Handcrafted heirloom print",
+                        icon: FileText,
+                      },
+                    ].map((srv) => {
+                      const Icon = srv.icon;
+                      const isActive = !!newEventServices[srv.key];
+                      return (
+                        <button
+                          key={srv.key}
+                          type="button"
+                          onClick={() => handleToggleEventService(srv.key)}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-accent-gold/15 border-accent-gold/60 text-white shadow-sm"
+                              : "bg-[#141414] border-white/5 text-text-muted hover:border-white/15 hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                              isActive ? "bg-accent-gold text-bg-primary font-bold" : "bg-white/5 text-text-muted"
+                            }`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold block truncate text-white">
+                                {srv.label}
+                              </span>
+                              <span className="text-[10px] text-text-muted block truncate">
+                                {srv.desc}
+                              </span>
+                            </div>
+                          </div>
+                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
+                            isActive ? "bg-accent-gold border-accent-gold text-bg-primary" : "border-white/20 bg-transparent"
+                          }`}>
+                            {isActive && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-1.5 border-t border-white/5 flex items-center justify-between text-[11px]">
+                    <span className="text-text-muted">Selected Scope:</span>
+                    <span className="text-accent-gold font-semibold truncate max-w-[280px]">
+                      {computeServiceScopeString(newEventServices)}
+                    </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {multiEventDates.map((dVal, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <span className="text-[9.5px] text-text-muted font-semibold uppercase">
-                        Day {idx + 1} Shoot Date:
-                      </span>
+                {/* 4. Multi-Day Dates Selector (Dynamic 1 to 30 Days) */}
+                <div className="space-y-2.5 p-3.5 bg-[#181818] border border-white/10 rounded-xl">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-accent-gold flex items-center gap-1.5">
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span>Shoot Days ({eventDaysCount})</span>
+                    </label>
+
+                    {/* Quick & Dynamic Days Controls */}
+                    <div className="flex items-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => handleDaysCountChange(d)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                            eventDaysCount === d
+                              ? "bg-accent-gold text-bg-primary"
+                              : "bg-white/5 text-text-muted hover:text-white"
+                          }`}
+                        >
+                          {d}D
+                        </button>
+                      ))}
+
+                      {/* Stepper for 6, 7, 8, 9, 10+ days */}
+                      <div className="flex items-center border border-white/10 rounded-lg overflow-hidden bg-[#121212] ml-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDaysCountChange(Math.max(1, eventDaysCount - 1))}
+                          disabled={eventDaysCount <= 1}
+                          className="px-1.5 py-0.5 text-text-muted hover:text-white hover:bg-white/5 disabled:opacity-30 cursor-pointer"
+                          title="Decrease Days"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max="30"
+                          value={eventDaysCount}
+                          onChange={(e) => handleDaysCountChange(e.target.value)}
+                          className="w-9 text-center bg-transparent text-[11px] font-bold text-accent-gold font-mono focus:outline-none"
+                          title="Type any number of days"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDaysCountChange(Math.min(30, eventDaysCount + 1))}
+                          className="px-1.5 py-0.5 text-text-muted hover:text-white hover:bg-white/5 cursor-pointer"
+                          title="Increase Days"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Date Inputs for all days */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
+                    {multiEventDates.map((dVal, idx) => {
+                      const dObj = formatEventDateWithDay(dVal);
+                      return (
+                        <div key={idx} className="space-y-1 p-2 rounded-lg bg-[#141414] border border-white/5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-text-muted font-bold uppercase">
+                              Day {idx + 1} Shoot Date:
+                            </span>
+                            {dObj.weekday && (
+                              <span className="text-[9.5px] text-accent-gold/80 font-medium">
+                                {dObj.weekday}
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="date"
+                            required
+                            value={dVal || ""}
+                            onClick={(e) => {
+                              try {
+                                if (typeof e.target.showPicker === "function") e.target.showPicker();
+                              } catch {}
+                            }}
+                            onFocus={(e) => {
+                              try {
+                                if (typeof e.target.showPicker === "function") e.target.showPicker();
+                              } catch {}
+                            }}
+                            onChange={(e) => {
+                              const updated = [...multiEventDates];
+                              updated[idx] = e.target.value;
+                              setMultiEventDates(updated);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#121212] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 5. Pricing & Advance */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                      Deal Total Amount (Rs) <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-text-muted font-bold">Rs</span>
                       <input
-                        type="date"
+                        type="number"
                         required
-                        value={dVal || ""}
-                        onClick={(e) => {
-                          try {
-                            if (typeof e.target.showPicker === "function") e.target.showPicker();
-                          } catch {}
-                        }}
-                        onFocus={(e) => {
-                          try {
-                            if (typeof e.target.showPicker === "function") e.target.showPicker();
-                          } catch {}
-                        }}
-                        onChange={(e) => {
-                          const updated = [...multiEventDates];
-                          updated[idx] = e.target.value;
-                          setMultiEventDates(updated);
-                        }}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#121212] border border-white/10 text-xs text-white focus:border-accent-gold/50 focus:outline-none transition-all cursor-pointer font-medium [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                        min="1"
+                        value={newEventData.total_amount}
+                        onChange={(e) => setNewEventData({ ...newEventData, total_amount: e.target.value })}
+                        placeholder="15000"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-sm font-mono font-bold text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
                       />
                     </div>
-                  ))}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                      Advance Received (Rs)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-text-muted font-bold">Rs</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newEventData.paid_amount}
+                        onChange={(e) => setNewEventData({ ...newEventData, paid_amount: e.target.value })}
+                        placeholder="8000"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-sm font-mono font-bold text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                  Location / Venue
-                </label>
-                <input
-                  type="text"
-                  value={newEventData.event_location}
-                  onChange={(e) => setNewEventData({ ...newEventData, event_location: e.target.value })}
-                  placeholder="Karachi, Pakistan"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
-                />
-              </div>
+                {/* Live Balance Computation Box */}
+                {Number(newEventData.total_amount) > 0 && (
+                  <div className="bg-[#181818] border border-white/10 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <span className="text-text-muted">
+                      Remaining Balance Due:
+                    </span>
+                    <span className="font-mono font-bold text-amber-300 text-sm">
+                      Rs {Math.max(0, Number(newEventData.total_amount || 0) - Number(newEventData.paid_amount || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                )}
 
-              {/* Pricing & Advance */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Deal Total Amount (Rs) <span className="text-rose-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-text-muted font-bold">Rs</span>
+                {/* Payment Method & Invoice # */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                      Advance Payment Method
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {[
+                        { key: "Cash", label: "Cash" },
+                        { key: "Bank Transfer", label: "Bank" },
+                        { key: "JazzCash / EasyPaisa", label: "Jazz/Easy" },
+                        { key: "Online Payment", label: "Online" },
+                        { key: "Cheque", label: "Cheque" },
+                      ].map((m) => (
+                        <button
+                          key={m.key}
+                          type="button"
+                          onClick={() => setNewEventData({ ...newEventData, payment_method: m.key })}
+                          className={`px-2 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                            newEventData.payment_method === m.key
+                              ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
+                              : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
+                      Invoice Number (Optional)
+                    </label>
                     <input
-                      type="number"
-                      required
-                      min="1"
-                      value={newEventData.total_amount}
-                      onChange={(e) => setNewEventData({ ...newEventData, total_amount: e.target.value })}
-                      placeholder="15000"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-sm font-mono font-bold text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
+                      type="text"
+                      value={newEventData.invoice_no}
+                      onChange={(e) => setNewEventData({ ...newEventData, invoice_no: e.target.value })}
+                      placeholder="e.g. INV-2026-0042"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
+                {/* 6. Notes */}
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Advance Received (Rs)
+                    Internal Booking Notes &amp; Scope
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-text-muted font-bold">Rs</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={newEventData.paid_amount}
-                      onChange={(e) => setNewEventData({ ...newEventData, paid_amount: e.target.value })}
-                      placeholder="8000"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-sm font-mono font-bold text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Live Balance Computation Box */}
-              {Number(newEventData.total_amount) > 0 && (
-                <div className="bg-[#181818] border border-white/10 rounded-xl p-3 flex items-center justify-between text-xs">
-                  <span className="text-text-muted">
-                    Remaining Balance:
-                  </span>
-                  <span className="font-mono font-bold text-amber-300">
-                    Rs {Math.max(0, Number(newEventData.total_amount || 0) - Number(newEventData.paid_amount || 0)).toLocaleString()}
-                  </span>
-                </div>
-              )}
-
-              {/* Payment Method & Invoice # */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Advance Payment Method
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {[
-                      { key: "Cash", label: "Cash" },
-                      { key: "Bank Transfer", label: "Bank" },
-                      { key: "JazzCash / EasyPaisa", label: "Jazz/Easy" },
-                      { key: "Online Payment", label: "Online" },
-                      { key: "Cheque", label: "Cheque" },
-                    ].map((m) => (
-                      <button
-                        key={m.key}
-                        type="button"
-                        onClick={() => setNewEventData({ ...newEventData, payment_method: m.key })}
-                        className={`px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
-                          newEventData.payment_method === m.key
-                            ? "bg-accent-gold/20 text-accent-gold border-accent-gold shadow-sm font-bold"
-                            : "bg-[#141414] text-text-muted border-white/10 hover:border-white/25 hover:text-white"
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                    Invoice Number (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={newEventData.invoice_no}
-                    onChange={(e) => setNewEventData({ ...newEventData, invoice_no: e.target.value })}
-                    placeholder="e.g. INV-2026-0042"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all"
+                  <textarea
+                    rows="2"
+                    value={newEventData.notes}
+                    onChange={(e) => setNewEventData({ ...newEventData, notes: e.target.value })}
+                    placeholder="Add specific requirements, shoot schedule, or team notes..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all resize-none"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1.5">
-                  Internal Booking Notes
-                </label>
-                <textarea
-                  rows="2"
-                  value={newEventData.notes}
-                  onChange={(e) => setNewEventData({ ...newEventData, notes: e.target.value })}
-                  placeholder="Add specific requirements, shoot schedule, or team notes..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#181818] border border-white/10 text-xs text-white placeholder:text-text-muted/50 focus:border-accent-gold/50 focus:outline-none transition-all resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setNewEventModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingNewEvent}
-                  className="px-5 py-2.5 rounded-xl bg-accent-gold text-bg-primary font-bold text-xs uppercase tracking-wider hover:bg-accent-warm transition-all flex items-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingNewEvent ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Creating...</span>
-                    </>
+              {/* Pinned Footer (ALWAYS VISIBLE - NEVER CUT OFF) */}
+              <div className="flex items-center justify-between p-4 sm:p-5 border-t border-white/10 shrink-0 bg-[#161616]">
+                <div className="text-xs">
+                  {Number(newEventData.total_amount) > 0 ? (
+                    <span className="text-text-muted">
+                      Balance: <strong className="text-amber-300 font-mono">Rs {Math.max(0, Number(newEventData.total_amount || 0) - Number(newEventData.paid_amount || 0)).toLocaleString()}</strong>
+                    </span>
                   ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Create Booking</span>
-                    </>
+                    <span className="text-[11px] text-text-muted">Fill required fields to book</span>
                   )}
-                </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setNewEventModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingNewEvent}
+                    className="px-5 py-2.5 rounded-xl bg-accent-gold text-bg-primary font-bold text-xs uppercase tracking-wider hover:bg-accent-warm transition-all flex items-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
+                  >
+                    {submittingNewEvent ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CalendarCheck className="w-4 h-4" />
+                        <span>Create Booking</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
