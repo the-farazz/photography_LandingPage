@@ -87,6 +87,10 @@ export default function AdminEventsBudgetPage() {
   const [shootDetailsModalOpen, setShootDetailsModalOpen] = useState(false);
   const [activeShootForDetails, setActiveShootForDetails] = useState(null);
 
+  // Complete Event Details Modal state (Full 360 Event Dossier: Client, All Dates, Financials, Installments)
+  const [completeDetailsModalOpen, setCompleteDetailsModalOpen] = useState(false);
+  const [activeEventForCompleteDetails, setActiveEventForCompleteDetails] = useState(null);
+
   // Toast notification state
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -1258,7 +1262,7 @@ export default function AdminEventsBudgetPage() {
                 <thead>
                   <tr className="border-b border-white/10 text-text-muted font-bold uppercase tracking-wider text-[10px] bg-[#161616]">
                     <th className="px-5 py-3.5">Client &amp; Scope</th>
-                    <th className="px-5 py-3.5">Event Date</th>
+                    <th className="px-5 py-3.5">Booking Date</th>
                     <th className="px-5 py-3.5 text-right">Total</th>
                     <th className="px-5 py-3.5 text-right">Paid</th>
                     <th className="px-5 py-3.5 text-right">Remaining</th>
@@ -1282,9 +1286,24 @@ export default function AdminEventsBudgetPage() {
                         {/* 1. Client & Scope */}
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1">
-                            <span className="font-bold text-white text-[13.5px]">
-                              {evt.client_name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveEventForCompleteDetails(evt);
+                                  setCompleteDetailsModalOpen(true);
+                                }}
+                                className="font-bold text-white text-[13.5px] hover:text-accent-gold transition-colors text-left cursor-pointer"
+                                title="Click to view complete event details"
+                              >
+                                {evt.client_name}
+                              </button>
+                              {evt.invoice_no && (
+                                <span className="font-mono text-[9.5px] text-accent-gold bg-accent-gold/10 px-1.5 py-0.2 rounded border border-accent-gold/20">
+                                  {evt.invoice_no}
+                                </span>
+                              )}
+                            </div>
 
                             {/* Service Type (No duplicate strings) */}
                             <div className="flex items-center gap-2 text-xs text-text-muted">
@@ -1307,12 +1326,12 @@ export default function AdminEventsBudgetPage() {
                           </div>
                         </td>
 
-                        {/* 2. Event Date (Formatted Day Month Year) */}
+                        {/* 2. Booking Date */}
                         <td className="px-5 py-4 whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="font-bold text-white text-xs font-mono flex items-center gap-1.5">
                               <Calendar className="w-3 h-3 text-accent-gold/70" />
-                              <span>{formatEventDate(evt.event_date)}</span>
+                              <span>{formatEventDate(evt.created_at || evt.booking_date || evt.event_date)}</span>
                             </span>
                             <span className="text-[10px] text-text-muted flex items-center gap-1 mt-0.5">
                               <MapPin className="w-2.5 h-2.5 text-text-muted/60" />
@@ -1380,7 +1399,7 @@ export default function AdminEventsBudgetPage() {
                         {/* 7. Actions */}
                         <td className="px-5 py-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            {!isFullyPaid ? (
+                            {!isFullyPaid && (
                               <button
                                 type="button"
                                 onClick={() => handleOpenPaymentModal(evt)}
@@ -1390,29 +1409,19 @@ export default function AdminEventsBudgetPage() {
                                 <CreditCard className="w-3 h-3" />
                                 <span>+ Pay</span>
                               </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveEventForHistory(evt);
-                                  setHistoryModalOpen(true);
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer"
-                              >
-                                <span>Ledger</span>
-                              </button>
                             )}
 
                             <button
                               type="button"
                               onClick={() => {
-                                setActiveEventForHistory(evt);
-                                setHistoryModalOpen(true);
+                                setActiveEventForCompleteDetails(evt);
+                                setCompleteDetailsModalOpen(true);
                               }}
-                              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                              title="View Payment Logs & Installments"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-primary hover:text-accent-gold hover:border-accent-gold/40 hover:bg-white/10 transition-all text-xs font-semibold cursor-pointer shadow-sm"
+                              title="View Complete Event Details, Schedule & Financials"
                             >
                               <Eye className="w-3.5 h-3.5" />
+                              <span>Details</span>
                             </button>
 
                             <button
@@ -2300,6 +2309,286 @@ export default function AdminEventsBudgetPage() {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 5: COMPLETE EVENT DETAILS (Comprehensive Dossier: Client, Logistics, Finances & Ledger) */}
+      {/* ========================================================================= */}
+      {completeDetailsModalOpen && activeEventForCompleteDetails && (() => {
+        const ev = activeEventForCompleteDetails;
+        const total = Number(ev.total_amount || 0);
+        const paid = Number(ev.paid_amount || 0);
+        const remaining = Math.max(0, Number(ev.remaining_amount ?? (total - paid)));
+        const isFullyPaid = remaining <= 0 && total > 0;
+
+        let dates = [];
+        const notes = ev.notes || "";
+        if (notes.includes("[DATES:")) {
+          try {
+            const dPart = notes.split("[DATES:")[1].split("]")[0];
+            dates = dPart.split(",").map((d) => d.trim()).filter(Boolean);
+          } catch {}
+        }
+        if (dates.length === 0 && ev.event_date) {
+          dates = [ev.event_date];
+        }
+
+        const cleanNotes = notes
+          .replace(/\[DATES:[^\]]+\]/g, "")
+          .replace(/Duration:\s*[^|]+(\|)?/g, "")
+          .trim();
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95">
+              {/* Header (Pinned) */}
+              <div className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5 pb-3 sm:pb-4 shrink-0 bg-[#141414]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-accent-gold/10 border border-accent-gold/30 flex items-center justify-center text-accent-gold">
+                    <CalendarCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white tracking-tight">
+                        {ev.client_name}
+                      </h3>
+                      {ev.invoice_no && (
+                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-mono text-accent-gold">
+                          {ev.invoice_no}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-text-muted">
+                      Complete Event Details &amp; Financial Ledger
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCompleteDetailsModalOpen(false)}
+                  className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+                {/* 1. Client & Booking Card */}
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                      Client &amp; Booking Info
+                    </span>
+                    <span className="text-[11px] text-accent-gold font-mono flex items-center gap-1 font-semibold">
+                      <Calendar className="w-3 h-3" />
+                      Booked: {formatEventDate(ev.created_at || ev.booking_date || ev.event_date)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-white/5 text-xs">
+                    {ev.client_phone ? (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-[#141414] border border-white/5">
+                        <span className="text-text-muted">Contact:</span>
+                        <a
+                          href={`https://wa.me/${ev.client_phone.replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-emerald-400 font-mono font-bold hover:underline"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>{ev.client_phone}</span>
+                        </a>
+                      </div>
+                    ) : null}
+
+                    {ev.client_email ? (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-[#141414] border border-white/5">
+                        <span className="text-text-muted">Email:</span>
+                        <span className="text-white font-mono truncate max-w-[140px]">{ev.client_email}</span>
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-[#141414] border border-white/5 sm:col-span-2">
+                      <span className="text-text-muted">Location / Venue:</span>
+                      <span className="text-white font-medium flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-accent-gold/70 shrink-0" />
+                        <span>{ev.event_location || "Karachi, Pakistan"}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Shoot Dates & Coverage */}
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                      Shoot Dates ({dates.length} {dates.length > 1 ? "Days" : "Day"})
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-gold/10 text-accent-gold border border-accent-gold/20">
+                      {ev.service_type || ev.event_title || "Photography"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {dates.map((dStr, idx) => {
+                      const dObj = formatEventDateWithDay(dStr);
+                      const st = getShootStatus(dStr);
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2.5 rounded-lg bg-[#141414] border border-white/5"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 border border-white/10 text-text-muted">
+                              Day {idx + 1}
+                            </span>
+                            <div>
+                              <span className="text-xs font-mono font-bold text-white block">
+                                {dObj.date}
+                              </span>
+                              <span className="text-[10px] text-text-muted">
+                                {dObj.weekday}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] border font-bold ${st.color}`}>
+                            {st.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {cleanNotes && (
+                    <div className="pt-2 border-t border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block mb-1">
+                        Notes &amp; Scope
+                      </span>
+                      <p className="text-xs text-text-muted/90 bg-[#141414] p-2.5 rounded-lg border border-white/5 leading-relaxed">
+                        {cleanNotes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Financial Summary */}
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                      Financial Summary
+                    </span>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        isFullyPaid
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : paid > 0
+                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                          : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                      }`}
+                    >
+                      {ev.status || (isFullyPaid ? "FULLY PAID" : paid > 0 ? "PARTIALLY PAID" : "UNPAID")}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-[#121212] p-2.5 rounded-lg border border-white/5">
+                      <span className="text-[10px] text-text-muted block uppercase font-bold">Total Deal</span>
+                      <span className="text-xs font-mono font-bold text-white">
+                        {formatPKR(total)}
+                      </span>
+                    </div>
+                    <div className="bg-[#121212] p-2.5 rounded-lg border border-emerald-500/10">
+                      <span className="text-[10px] text-emerald-400 block uppercase font-bold">Collected</span>
+                      <span className="text-xs font-mono font-bold text-emerald-300">
+                        {formatPKR(paid)}
+                      </span>
+                    </div>
+                    <div className="bg-[#121212] p-2.5 rounded-lg border border-amber-500/20 bg-amber-950/10">
+                      <span className="text-[10px] text-amber-400 block uppercase font-bold">Balance</span>
+                      <span className="text-xs font-mono font-bold text-amber-300">
+                        {formatPKR(remaining)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Payment Installments Ledger */}
+                <div className="bg-[#181818] border border-white/10 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                      Installment History ({Array.isArray(ev.event_payments) ? ev.event_payments.length : 0})
+                    </span>
+                  </div>
+
+                  {Array.isArray(ev.event_payments) && ev.event_payments.length > 0 ? (
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {ev.event_payments.map((p, idx) => (
+                        <div
+                          key={p.id || idx}
+                          className="bg-[#141414] border border-white/5 rounded-lg p-2.5 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[10px] font-semibold text-text-primary">
+                                {p.payment_method || "Cash"}
+                              </span>
+                              <span className="text-text-muted font-mono text-[11px]">
+                                {formatEventDate(p.payment_date)}
+                              </span>
+                            </div>
+                            {p.notes && (
+                              <p className="text-[11px] text-text-muted/80 italic mt-0.5">
+                                &ldquo;{p.notes}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                          <span className="font-mono font-bold text-emerald-400">
+                            +Rs {Number(p.amount || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-[#141414] rounded-lg border border-white/5 text-xs text-text-muted italic">
+                      No separate installments recorded yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between p-4 sm:p-5 pt-3 sm:pt-4 border-t border-white/10 shrink-0 bg-[#141414]">
+                {remaining > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCompleteDetailsModalOpen(false);
+                      handleOpenPaymentModal(ev);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-accent-gold text-bg-primary font-bold text-xs uppercase tracking-wider hover:bg-accent-warm transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>+ Record Payment</span>
+                  </button>
+                ) : (
+                  <span className="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Fully Cleared</span>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setCompleteDetailsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-text-muted hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
